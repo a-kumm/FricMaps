@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   cited in scientific work.
 
 ### Changed
+- The Processing algorithm is no longer hidden from the toolbox, and the plugin
+  now declares its Processing provider. The complete workflow can be run from
+  Python or `qgis_process` as `fricmaps:build_surfaces`, and returns the path of
+  every deliverable.
 - Legacy development names removed throughout. The Processing algorithm is now
   addressed as `fricmaps:build_surfaces` (previously
   `autoecomap:ecofriction_pipeline`), and the plugin classes are named

@@ -21,6 +21,7 @@ FricMaps makes that chain explicit and reproducible. Source harmonisation is aut
 - **Unified weighting engine** — multiplicative rules based on slope or on distance to *any* class or custom source, with user-defined bands. This is how diffuse pressures such as light pollution or disturbance around buildings are modelled.
 - **Resolution-aware buffering** — linear features are widened proportionally to the output resolution, so barriers stay continuous in the raster instead of breaking into disconnected pixels.
 - **Scenario generation** — alternative resistance surfaces (no fences, no linear transport infrastructure, no barriers) are produced without re-running the vector stage.
+- **Scriptable** — the entire workflow is exposed as the Processing algorithm `fricmaps:build_surfaces`, so a run is fully reproducible from Python or `qgis_process`, without opening the interface.
 - **Bilingual interface** — English and French, with light and dark themes and a context-sensitive guidance panel.
 
 ## Requirements
@@ -129,6 +130,7 @@ pyproject.toml       formatting and linting configuration
 
 - [`docs/GENERIC_SOURCES_ARCHITECTURE.md`](docs/GENERIC_SOURCES_ARCHITECTURE.md) — design of the data-driven custom-source system
 - [`docs/GENERIC_SOURCES_IMPLEMENTATION.md`](docs/GENERIC_SOURCES_IMPLEMENTATION.md) — delivered behaviour and a worked example
+- [`docs/SCRIPTING.md`](docs/SCRIPTING.md) — running the whole workflow from a script
 - [`CHANGELOG.md`](CHANGELOG.md) — release history
 
 ## Citation

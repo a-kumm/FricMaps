@@ -26,6 +26,7 @@ from qgis.core import (
     QgsProcessingParameterNumber,
     QgsProcessingParameterBoolean,
     QgsProcessingOutputFolder,
+    QgsProcessingOutputRasterLayer,
     QgsProcessingException,
     QgsMessageLog,
     Qgis,
@@ -58,10 +59,26 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
     WEIGHTING_RULES = "WEIGHTING_RULES"
     VERIFY_DATA = "VERIFY_DATA"
 
-    # Output keys
-    OUTPUT_RASTER_CLASSES = "OUTPUT_RASTER_CLASSES"
-    OUTPUT_RASTER_FRICTION = "OUTPUT_RASTER_FRICTION"
+    # Output keys. They mirror the keys returned by run_pipeline(), so a script
+    # gets the path of every deliverable back instead of having to rebuild the
+    # filenames itself.
     OUTPUT_FOLDER = "OUTPUT_FOLDER_PATH"
+    OUTPUT_LAND_COVER = "OUTPUT_LAND_COVER"
+    OUTPUT_FRICTION = "OUTPUT_FRICTION"
+    OUTPUT_FRICTION_WEIGHTED = "OUTPUT_FRICTION_WEIGHTED"
+    OUTPUT_SCENARIO_NO_FENCES = "OUTPUT_SCENARIO_NO_FENCES"
+    OUTPUT_SCENARIO_NO_LTI = "OUTPUT_SCENARIO_NO_LTI"
+    OUTPUT_SCENARIO_NO_BARRIERS = "OUTPUT_SCENARIO_NO_BARRIERS"
+
+    #: Maps a run_pipeline() result key onto the algorithm output it feeds.
+    _RESULT_TO_OUTPUT = {
+        "classes_raster": OUTPUT_LAND_COVER,
+        "friction_raster": OUTPUT_FRICTION,
+        "friction_weighted_raster": OUTPUT_FRICTION_WEIGHTED,
+        "scenario_no_fences": OUTPUT_SCENARIO_NO_FENCES,
+        "scenario_no_lti": OUTPUT_SCENARIO_NO_LTI,
+        "scenario_no_barriers": OUTPUT_SCENARIO_NO_BARRIERS,
+    }
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -189,7 +206,16 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
         )
 
         # Outputs
-        self.addOutput(QgsProcessingOutputFolder(self.OUTPUT_FOLDER, "Output Folder"))
+        self.addOutput(QgsProcessingOutputFolder(self.OUTPUT_FOLDER, "Output folder"))
+        for key, label in (
+            (self.OUTPUT_LAND_COVER, "Land-cover raster"),
+            (self.OUTPUT_FRICTION, "Friction raster"),
+            (self.OUTPUT_FRICTION_WEIGHTED, "Weighted friction raster"),
+            (self.OUTPUT_SCENARIO_NO_FENCES, "Scenario: no fences"),
+            (self.OUTPUT_SCENARIO_NO_LTI, "Scenario: no linear transport infrastructure"),
+            (self.OUTPUT_SCENARIO_NO_BARRIERS, "Scenario: no barriers"),
+        ):
+            self.addOutput(QgsProcessingOutputRasterLayer(key, label))
 
     def processAlgorithm(self, parameters, context, feedback):
         epci_layer = self.parameterAsVectorLayer(parameters, self.EPCI_FILE, context)
@@ -225,7 +251,7 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
             QgsMessageLog.logMessage(msg, "FricMaps", Qgis.Info)
 
         try:
-            run_pipeline(
+            results = run_pipeline(
                 epci_file=epci_path,
                 base_dir=base_dir,
                 output_dir=output_dir,
@@ -249,7 +275,14 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
         except Exception as e:
             raise QgsProcessingException(f"Pipeline failed: {e}")
 
-        return {self.OUTPUT_FOLDER: output_dir}
+        # Hand every produced raster back to the caller. Missing keys are simply
+        # absent from the result (a vector-only run produces no raster at all).
+        outputs = {self.OUTPUT_FOLDER: output_dir}
+        for result_key, output_key in self._RESULT_TO_OUTPUT.items():
+            path = (results or {}).get(result_key)
+            if path:
+                outputs[output_key] = path
+        return outputs
 
     def name(self):
         return "build_surfaces"
@@ -266,8 +299,13 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
         return "fricmaps"
 
     def flags(self):
-        """Returns the algorithm flags."""
-        return super().flags() | QgsProcessingAlgorithm.FlagHideFromToolbox
+        """Returns the algorithm flags.
+
+        The algorithm is deliberately NOT hidden from the Processing toolbox:
+        exposing it is what makes a run reproducible from a script, without
+        opening the interface.
+        """
+        return super().flags()
 
     def shortHelpString(self):
         return self.tr("Builds land-cover and resistance surfaces for connectivity modelling.")

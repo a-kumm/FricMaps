@@ -22,9 +22,9 @@ email=anthonin.kumm@live-cnrs.unistra.fr
 # Optional icon.  Leave blank or provide a relative path to a PNG placed in
 # your plugin directory.
 icon=icon.png
-# This plugin does not register a processing provider since it relies on
-# native QGIS processing algorithms directly.
-hasProcessingProvider=no
+# The plugin registers a Processing provider, so its algorithm can be run from
+# the Processing toolbox and from Python (fricmaps:build_surfaces).
+hasProcessingProvider=yes
 ; Optional path to HTML help files.  Not provided here.
 ; helpPath=
 # Repository, tracker and homepage (required for the official QGIS repository).
