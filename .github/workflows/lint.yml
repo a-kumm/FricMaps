@@ -1,0 +1,30 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install tooling
+        run: pip install black ruff
+
+      - name: Check formatting (black)
+        run: black --check --line-length 100 .
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Byte-compile all modules
+        # QGIS/PyQt are not installed on the runner, so we only check that every
+        # module is syntactically valid.
+        run: python -m compileall -q .

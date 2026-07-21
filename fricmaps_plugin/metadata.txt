@@ -1,0 +1,40 @@
+; Metadata for the FricMaps QGIS plugin
+[general]
+# Name shown in the plugin manager.  Use only ASCII characters here.
+name=FricMaps
+# Short description of what this plugin does.  Keep it concise and use
+# English so the plugin can be published on the official repository.
+description=FricMaps: A Tool for Modeling Landscape Connectivity and Fence Permeability.
+# Longer summary displayed under the title in the plugin manager.
+about=Resistance surfaces underpin ecological connectivity modelling, yet their construction is often hard to reproduce because it depends on heterogeneous input data and poorly documented preprocessing choices. FricMaps automates the generation of standardised land-cover and resistance surfaces through modular vector preprocessing and a rule-based rasterisation engine driven by a user-editable classification table. It explicitly integrates underrepresented anthropogenic barriers such as fences, applies attribute-dependent buffering of roads and railways, and uses wildlife crossing structures to locally restore permeability at validated locations. Contextual weighting by slope and by distance to any class or custom source supports scenario generation. Outputs are directly compatible with graph-based connectivity software such as Graphab. Source code is GPL-3.0-or-later; documentation and the default classification table are CC BY 4.0 (see LICENSE).
+# Category under which the plugin is listed in the plugin manager.  See the
+# documentation for available categories (Raster, Vector, Database, etc.).
+category=Raster
+# Version number of your plugin.  Increment this when you publish new releases.
+version=1.0.0
+# Minimum and maximum QGIS versions that the plugin supports.  Adjust as
+# necessary if you test against newer QGIS releases.
+qgisMinimumVersion=3.28
+qgisMaximumVersion=3.999
+# Author information.  Matches the author list of the companion paper.
+author=Anthonin Kumm, Cybill Staentzel, Lucie Gendron, Melodie Kunegel-Lion, Sylvain Moulherat, Romain Wenger
+email=anthonin.kumm@live-cnrs.unistra.fr
+# Optional icon.  Leave blank or provide a relative path to a PNG placed in
+# your plugin directory.
+icon=icon.png
+# This plugin does not register a processing provider since it relies on
+# native QGIS processing algorithms directly.
+hasProcessingProvider=no
+; Optional path to HTML help files.  Not provided here.
+; helpPath=
+# Repository, tracker and homepage (required for the official QGIS repository).
+repository=https://github.com/a-kumm/FricMaps
+tracker=https://github.com/a-kumm/FricMaps/issues
+homepage=https://github.com/a-kumm/FricMaps
+# SPDX licence identifier.
+license=GPL-3.0-or-later
+# Tags help users find the plugin in the plugin manager.
+tags=ecology,connectivity,friction,resistance,landscape,raster,graphab
+# Set to True only for pre-releases.
+experimental=False
+deprecated=False

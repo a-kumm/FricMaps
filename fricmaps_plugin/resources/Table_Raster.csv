@@ -1,0 +1,41 @@
+﻿CLASS_NAME;COMPILATION_ORDER;DESCRIPTION;SOURCE;SQL_FILTER;FRICTION_VALUE
+CULTURE_BIS;1;Culture OCS GE ;OCS;" ""CODE_US"" =  'US1.1' ";100
+FORET_BIS;2;Foret OCS GE ;OCS;" ""CODE_CS"" in ( 'CS2.1.1.1' , 'CS2.1.1.2' , 'CS2.1.1.3' )";1
+ILT_BIS;3;OCS GE remplacement ILT;OCS;" ""CODE_US"" in ( 'US4.1.2' , 'US4.1.1' , 'US4.1.3' )";1000
+ZONE_NATURELLE_2;4;Sol nu ;OCS;" ""CODE_CS"" in ('CS1.2.3' , 'CS1.2.1' )";30
+ZONE_NATURELLE_1;5;Zone naturelle ;OCS;" ""CODE_CS"" in ( 'CS2.1.2' , 'CS2.1.3' , 'CS2.2.1' , 'CS2.2.2' )";100
+FORET_BOIS;6;;VEGETATION;"""NATURE"" = 'BOIS'";5
+FORET_FORET_FERMEE_DE_CONIFERES;7;;VEGETATION;"""NATURE"" = 'FORET_FERMEE_DE_CONIFERES'";1
+FORET_FORET_FERMEE_DE_FEUILLUS;8;;VEGETATION;"""NATURE"" = 'FORET_FERMEE_DE_FEUILLUS'";1
+FORET_FORET_FERMEE_MIXTE;9;;VEGETATION;"""NATURE"" = 'FORET_FERMEE_MIXTE'";1
+FORET_FORET_OUVERTE;10;;VEGETATION;"""NATURE"" = 'FORET_OUVERTE'";1
+FORET_LANDE_LIGNEUSE;11;;VEGETATION;"""NATURE"" = 'LANDE_LIGNEUSE'";5
+FORET_PEUPLERAIE;12;;VEGETATION;"""NATURE"" = 'PEUPLERAIE'";5
+FORET_VERGER;13;;VEGETATION;"""NATURE"" = 'VERGER'";50
+FORET_VIGNE;14;;VEGETATION;"""NATURE"" = 'VIGNE'";100
+CULTURE_1;15;Culture tres favaroble;RPG;" ""CODE_GROUP"" in ( '17' , '18' )";5
+CULTURE_2;16;Culture favaroble;RPG;" ""CODE_GROUP"" in ('16' , '19' ,'22')";30
+CULTURE_3;17;Culture attractive;RPG;" ""CODE_GROUP"" in ( '1' , '2' , '3' , '5' , '6' , '8' , '15' , '20' )";50
+CULTURE_4;18;Culture peu favorable;RPG;" ""CODE_GROUP"" in ( '4' , '7' , '21' , '23')";100
+CULTURE_5;19;Culture peu favorable;RPG;" ""CODE_GROUP"" in ( '9' , '25' , '11' , '28' )";1000
+VEGETATION;20;Haie;HEDGES;;10
+H0;21;Cours eaux OCS GE ;OCS;"""CODE_CS"" = 'CS1.2.2' ";500
+H1;22;Zone humide naturelle ;HYDRO;" ""NATURE"" in ( 'Marais' ,  'Mare' , 'Retenue' )";50
+H2;23;Petit cours d'eaux ;HYDRO;" ""NATURE"" in ( 'Ecoulement naturel' , 'Retenue' ) AND  ""LARGEUR"" = 'Entre 0 et 5 m' ";30
+H3;24;Grand cours d'eau ;HYDRO;" ""NATURE"" in ( 'Ecoulement naturel' , 'Retenue' ) AND  ""LARGEUR"" = 'Entre 15 et 50 m'  ";500
+H4;25;Etendue d'eau d'origine anthropique;HYDRO;" ""NATURE"" in ( 'Retenue-barrage' , 'Réservoir-bassin' , 'Réservoir-bassin d''orage' )";10000
+H5;26;Ecoulement canalisee;HYDRO;" ""NATURE"" in ('Canal' , 'Conduit forcé' )";10000
+BATI_2;27;Zone abandonnee;OCS;" ""CODE_US"" =  'US6.2' ";500
+BATI_1;28;Zone bati;OCS;" ""CODE_US"" in ( 'US3' , 'US4.2' , 'US5' , 'US235' , 'US6.1' , 'US2'  ) or ( (""CODE_US"" = 'US4.3') and ""CODE_CS"" in ('CS1.1.1.1' , 'CS1.1.1.2' , 'CS1.1.2.1' )) or ((""CODE_US"" = 'US1.1') and  ""CODE_CS"" = 'CS1.1.1.1')";1000
+BATI_6;29;Bati dense;BUILT_AREA;;3000
+BATI_3;30;Infrastructure bati infranchissable;TECH_INFRA;" ""TYPE"" in ( 'AERODROME' , 'CIMETIERE' , 'POSTE_DE_TRANSFORMATION' )";10000
+BATI_4;31;Infrastructure bati potentiellement  infranchissable;TECH_INFRA;" ""TYPE"" in ( 'RESERVOIR' , 'TERRAIN_DE_SPORT' )";1000
+BATI_5;32;Zone extraction;OCS;" ""CODE_US"" =  'US1.3' ";1000
+R4;33;Chemin non carossable;LTI;" ""perm"" =  6";50
+R3;34;Chemin carossable;LTI;" ""perm"" =  5";100
+VF;35;Voie ferree;LTI;" ""NATURE"" in ( 'SANS OBJET', 'VOIE DE SERVICE' , 'VOIE FERRÉE PRINCIPALE' )";1000
+R2;36;Route principale;LTI;" ""perm"" =  3 ";500
+R1;37;Autoroute;LTI;" ""perm"" =  2 ";10000
+LGV;38;Ligne a grande vitesse;LTI;" ""NATURE"" = 'LGV'";10000
+CPV_FENCE_CPV;39;Centrale photovoltaique;SOLAR_FENCES;"""TYPE"" = 'SOLAR'";10000
+CPV_FENCE_CLOTURE;40;Cloture;SOLAR_FENCES;;10000

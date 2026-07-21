@@ -1,0 +1,52 @@
+cff-version: 1.2.0
+title: "FricMaps: an open QGIS plugin to generate land-cover and resistance surfaces for Graphab"
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - family-names: "Kumm"
+    given-names: "Anthonin"
+    email: "anthonin.kumm@live-cnrs.unistra.fr"
+    affiliation: "Universite de Strasbourg, ENGEES, CNRS, LIVE UMR 7362, Strasbourg, France"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"   # TODO: add ORCID
+  - family-names: "Staentzel"
+    given-names: "Cybill"
+    affiliation: "Universite de Strasbourg, ENGEES, CNRS, LIVE UMR 7362, Strasbourg, France"
+  - family-names: "Gendron"
+    given-names: "Lucie"
+    affiliation: "OikoLab, TerrOiko, Soreze, France"
+  - family-names: "Kunegel-Lion"
+    given-names: "Melodie"
+    affiliation: "OikoLab, TerrOiko, Soreze, France"
+  - family-names: "Moulherat"
+    given-names: "Sylvain"
+    affiliation: "OikoLab, TerrOiko, Soreze, France"
+  - family-names: "Wenger"
+    given-names: "Romain"
+    affiliation: "Centre d'Etudes Spatiales de la Biosphere (CESBIO), Universite de Toulouse, CNES/CNRS/INRAE/IRD/UT3-Paul Sabatier, Toulouse, France"
+repository-code: "https://github.com/a-kumm/FricMaps"
+license: GPL-3.0-or-later
+# Source code is GPL-3.0-or-later; documentation, the default
+# classification table and figures are CC-BY-4.0 (see LICENSE, PART 2).
+version: "1.0.0"
+date-released: "2026-01-01"                              # TODO: update on release
+keywords:
+  - anthropogenic barriers
+  - connectivity modelling
+  - resistance surface
+  - friction surface
+  - landscape ecology
+  - QGIS
+  - Graphab
+abstract: >-
+  FricMaps is an open-source QGIS plugin that automates the production of
+  standardised land-cover and resistance (friction) rasters for ecological
+  connectivity modelling. It combines modular vector preprocessing with a
+  rule-based rasterisation engine driven by a user-editable classification
+  table. The workflow explicitly integrates underrepresented anthropogenic
+  barriers such as fences, applies attribute-dependent buffering of roads and
+  railways, and uses wildlife crossing structures to locally restore
+  permeability at validated locations. It ingests French national datasets
+  (BD TOPO, OCS GE, RPG, RGE ALTI) in both Shapefile and GeoPackage
+  deliveries, supports user-defined custom data sources, and applies
+  configurable multiplicative weighting rules. Outputs are ready for
+  graph-based connectivity analysis, for instance with Graphab.
