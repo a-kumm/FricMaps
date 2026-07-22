@@ -1,28 +1,42 @@
-# FricMaps <img src="fricmaps_plugin/resources/logo_info.png" alt="FricMaps Logo" width="150" align="right">
+# FricMaps <img src="fricmaps_plugin/resources/logo_info.png" alt="FricMaps Logo" width="100" align="right">
 
 [![Code: GPL v3](https://img.shields.io/badge/code-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Docs: CC BY 4.0](https://img.shields.io/badge/docs-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 [![QGIS](https://img.shields.io/badge/QGIS-%E2%89%A5%203.28-93b023.svg)](https://qgis.org)
 [![Version](https://img.shields.io/badge/version-1.0.0-informational.svg)](CHANGELOG.md)
 
-**FricMaps** is an open-source QGIS plugin for **modelling landscape connectivity and fence permeability**. It provides an automated pipeline that turns heterogeneous vector datasets into high-resolution land-cover and resistance surfaces (friction maps), ready for graph-based connectivity analysis in tools such as [Graphab](https://sourcesup.renater.fr/www/graphab/).
+<div align="justify">
+  
+**FricMaps** is an open-source QGIS plugin that automates the generation of standardised land-cover and **resistance surfaces** for ecological connectivity modelling at 5 m resolution. It turns heterogeneous vector datasets into analysis-ready rasters through a modular vector-preprocessing and rule-based rasterisation workflow, exporting surfaces directly compatible with connectivity-modelling tools such as [Graphab](https://sourcesup.renater.fr/www/graphab/).
+
+</div>
 
 ## Description
 
-Building a resistance surface is usually a long, manual and poorly reproducible process: datasets come from different producers, with different schemas and vintages, and every thematic choice ends up buried in a chain of one-off geoprocessing steps.
+<div align="justify">
+  
+Resistance surfaces are the backbone of ecological connectivity modelling, but building them is hard to reproduce: the input data are heterogeneous — different producers, schemas and vintages — and the preprocessing and parameter choices are rarely documented.
 
-FricMaps makes that chain explicit and reproducible. Source harmonisation is automated, and every ecological assumption — which class, which resistance value, which barrier effect — lives in a single editable classification table rather than in code. The plugin pays particular attention to anthropogenic barriers that are usually underrepresented in connectivity studies, such as fences and artificial lighting, and can restore local permeability at validated wildlife crossings using databases such as BD ORFeH.
+FricMaps addresses this by standardising the whole chain. Heterogeneous national and open datasets are harmonised through a modular vector-preprocessing workflow, then converted into land-cover and resistance rasters by a rule-based rasterisation engine. Every thematic decision — land-cover classes, resistance values, compilation order — is defined in a single user-editable classification table, so the mapping from data to surface is explicit and fully documented rather than hidden in code.
+
+Beyond standard land cover, the workflow explicitly integrates underrepresented anthropogenic barriers such as fences, applies attribute-dependent buffering of roads and railways, and uses wildlife crossing structures (e.g. BD ORFeH) to locally restore permeability at validated locations. Contextual weighting by slope and urban influence, together with built-in scenario generation, makes FricMaps suited to reproducible, scenario-based connectivity assessments over large administrative extents.
+
+</div>
 
 ## Features
 
-- **Automated vector pipeline** — from raw national datasets to analysis-ready rasters, over any study area.
-- **Dual-format compatibility** — legacy Shapefile deliveries and the BD TOPO 3.x GeoPackage model are both supported; field names are harmonised automatically, so the raw download tree can be used as-is.
-- **Data-driven custom sources** — register any additional vector dataset from the interface, with its own detection rule, SQL filter and buffer. No Python required.
-- **Unified weighting engine** — multiplicative rules based on slope or on distance to *any* class or custom source, with user-defined bands. This is how diffuse pressures such as light pollution or disturbance around buildings are modelled.
-- **Resolution-aware buffering** — linear features are widened proportionally to the output resolution, so barriers stay continuous in the raster instead of breaking into disconnected pixels.
-- **Scenario generation** — alternative resistance surfaces (no fences, no linear transport infrastructure, no barriers) are produced without re-running the vector stage.
-- **Scriptable** — the entire workflow is exposed as the Processing algorithm `fricmaps:build_surfaces`, so a run is fully reproducible from Python or `qgis_process`, without opening the interface.
-- **Bilingual interface** — English and French, with light and dark themes and a context-sensitive guidance panel.
+<div align="justify">
+
+- **Automated preprocessing** — heterogeneous national datasets (OCS GE, RPG, BD TOPO®, RGE ALTI®, BD ORFeH) are queried, clipped and harmonised into consistent thematic layers, ready for rasterisation at 5 m.
+- **Attribute-dependent buffering** — roads and railways are turned into polygonal rights-of-way whose width is derived from their attributes, so barrier footprints are represented realistically rather than as uniform lines.
+- **Conditional permeability** — validated wildlife crossings (BD ORFeH) locally erase overlapping transport infrastructure, keeping barriers continuous except at functional crossing nodes; fences and photovoltaic parks are integrated as underrepresented anthropogenic barriers.
+- **Data-driven rasterisation** — a single user-editable classification table (CSV: source, SQL filter, priority, class code, resistance value) drives the output through a hierarchical stacking engine, yielding both a land-cover map and a resistance surface without touching the code.
+- **Custom sources & weighting** — register any extra vector dataset from the interface, and modulate the baseline resistance by slope (Sobel, from the DEM) or distance to any class or source, through user-defined bands.
+- **Scenario generation** — alternative surfaces (no fences, no linear transport infrastructure, no barriers) are produced by local value replacement, avoiding artificial discontinuities and re-running the vector stage.
+- **Built on the QGIS stack** — PyQGIS for vector, GDAL for raster I/O, NumPy for weighting; no external dependency, and fully scriptable through the Processing algorithm `fricmaps:build_surfaces`.
+- **Practitioner-oriented** — bilingual GUI (English/French, light/dark themes), dual Shapefile/GeoPackage compatibility, and every parameter recorded in the logs for traceability.
+
+</div>
 
 ## Requirements
 
@@ -47,46 +61,76 @@ zip -r fricmaps_plugin.zip fricmaps_plugin -x "*__pycache__*" -x "*.DS_Store"
 
 Then restart QGIS and enable **FricMaps** in the Plugin Manager.
 
-> `fricmaps_plugin/` must sit directly in the plugins directory: QGIS uses the folder name as the Python module name, so an intermediate folder produces an invalid name and the plugin fails to load. Zipping from the macOS Finder also adds a `__MACOSX` folder that QGIS tries to load as a plugin — build the archive from a terminal, as above.
-
-The plugin is then available from the **FricMaps** toolbar button and from the *Plugins → FricMaps* menu.
+<blockquote>
+<div align="justify">
+`fricmaps_plugin/` must sit directly in the plugins directory: QGIS uses the folder name as the Python module name, so an intermediate folder produces an invalid name and the plugin fails to load. Zipping from the macOS Finder also adds a `__MACOSX` folder that QGIS tries to load as a plugin — build the archive from a terminal, as above.
+ 
+</div>
+</blockquote>
 
 ## Input data
-
+ 
+<div align="justify">
 FricMaps is built around the French national datasets, in either Shapefile or GeoPackage delivery:
+ 
+</div>
 
-| Dataset | Used for |
-|---------|----------|
-| **OCS GE** | Land-cover base layer |
-| **BD TOPO** | Buildings, roads, railways, hydrography, vegetation, hedgerows, built-up areas |
-| **RPG** | Agricultural parcels |
-| **RGE ALTI** | Digital elevation model, for slope weighting |
-| **BD ORFeH** *(optional)* | Wildlife crossing structures |
-
+| Dataset | Used for | Download |
+|---------|----------|----------|
+| **OCS GE** | Land-cover base layer | [cartes.gouv.fr - OCS GE](https://cartes.gouv.fr/rechercher-une-donnee/dataset/IGNF_OCS-GE) |
+| **BD TOPO®** | Buildings, roads, railways, hydrography, vegetation, hedgerows, built-up areas | [carte.gouv.fr - BD Topo®](https://cartes.gouv.fr/rechercher-une-donnee/dataset/IGNF_BD-TOPO) |
+| **RPG** | Agricultural parcels | [carte.gouv.fr - RPG](https://cartes.gouv.fr/rechercher-une-donnee/dataset/IGNF_RPG) |
+| **RGE ALTI®** | Digital elevation model, for slope weighting | [cartes.gouv.fr - RGE Alti®](https://cartes.gouv.fr/rechercher-une-donnee/dataset/IGNF_RGE-ALTI) |
+| **BD ORFeH** *(optional)* | Wildlife crossing structures | [FRC Occitanie — Via Fauna](https://carto.frcoccitanie.fr/lm/index.php/view/map/?repository=occitanie&project=00020_ORFEH) *(full GIS version on agreement)* |
+ 
+<div align="justify">
+  
 Point the plugin at the directory holding these datasets: sub-folders are scanned recursively, so the delivery tree does not need to be reorganised. Any other dataset can be added through the custom-sources mechanism.
+ 
+**Data sources and credits.** OCS GE, BD TOPO® and RGE ALTI® are © IGN, available under the *Etalab 2.0* Open Licence. The RPG is © IGN / ASP, under the *Etalab 2.0* Open Licence. The BD ORFeH database is produced by the *Via Fauna* project (FRC Occitanie - 2023), the full GIS version is available under agreement. Fence data can be derived from [OpenStreetMap](https://www.openstreetmap.org) (© OpenStreetMap contributors, ODbL) or from predictive layers.
+
+</div>
 
 ## Usage
+ 
+<div align="justify">
+The plugin can be run from its interface or, for reproducible workflows, as the Processing algorithm `fricmaps:build_surfaces` (see [`docs/SCRIPTING.md`](docs/SCRIPTING.md)). The interface follows the four stages of the workflow.
+ 
+</div>
 
-The interface follows the four stages of the workflow.
-
-**1 — Vector processing.** Select the study area (a project layer or a file), the name field and the value identifying your territory. Set the base data directory and the output directory. Optionally apply a buffer around the study area to avoid edge effects in the connectivity graph, and declare any custom source.
-
-**2 — Rasterization.** Edit the classification table that drives the whole thematic content of the output. Each row maps a subset of a source to a class and a resistance value:
+<p align="center">
+  <img src="docs/img/interface_overview.png" alt="FricMaps interface" width="800"/>
+</p>
+<div align="justify">
+  
+**1 — Vector processing.** Define the study area (a project layer or a file), the name field and the value identifying your territory, then the base data directory and the output directory. An optional buffer around the study area limits edge effects in the connectivity graph. At this stage, heterogeneous source layers are automatically queried, clipped, harmonised and — for linear features such as roads, railways, hedgerows or streams — converted into polygonal footprints so they are effectively represented at the target resolution. Any additional dataset can be declared here as a custom source.
+ 
+**2 — Rasterization.** Edit the classification and resistance matrix that drives the whole thematic content of the output. Each row is a geospatial rule; a hierarchical stacking engine rasterises the rows by priority, so higher-priority elements (e.g. roads) overwrite lower-priority ones (e.g. land cover):
+ 
+</div>
 
 | Column | Meaning |
 |--------|---------|
 | `CLASS_NAME` | Class name |
-| `COMPILATION_ORDER` | Burn priority — higher values are rasterised last and overwrite lower ones |
+| `COMPILATION_ORDER` | Stacking priority — higher values are rasterised last and overwrite lower ones |
 | `DESCRIPTION` | Free-text description |
 | `SOURCE` | Dataset the class is drawn from |
 | `SQL_FILTER` | Optional SQL expression restricting the class to a subset of features |
 | `FRICTION_VALUE` | Resistance value; low means permeable, high means costly to cross |
+ 
+<p align="center">
+  <img src="docs/img/classification_table.png" alt="Classification and resistance matrix" width="800"/>
+</p>
 
-The table is a semicolon-separated CSV and can be edited in place or loaded from disk. A default table of 39 classes is provided as `fricmaps_plugin/resources/Table_Raster.csv`. Tables authored with the earlier French column names are migrated automatically on load.
-
-**3 — Weighting.** Add multiplicative rules on top of the base friction. Each rule targets either the slope (from the DEM) or the distance to any class or custom source, with user-defined bands. A factor of `1.0` is neutral; values below 1 make a zone more permeable. The processing is launched from the bottom of this tab.
-
-**4 — Logs.** Follow the run step by step. Each stage reports its retained feature count, which is the fastest way to confirm that a dataset was read correctly.
+<div align="justify">
+  
+The matrix is a semicolon-separated CSV, editable in place or loaded from disk; a default table of 39 classes is provided in `fricmaps_plugin/resources/`. Editing it recalibrates the whole run — new classes, land-use scenarios or resistance profiles — without touching the code. This stage produces two rasters: a land-cover map and the associated baseline resistance surface.
+ 
+**3 — Weighting.** Apply contextual weightings on top of the baseline resistance. Each rule targets the slope (from the DEM) or the distance to any class or custom source, through user-defined bands and multipliers — the mechanism used to model topographic cost or the diffuse deterrence of human presence. A factor of `1.0` is neutral; below 1 makes a zone more permeable. The run, including the *no fences* / *no linear transport infrastructure* / *no barriers* scenarios, is launched from the bottom of this tab.
+ 
+**4 — Logs.** Follow the run step by step. Each stage reports its retained feature count — the fastest way to confirm a dataset was read correctly — and every parameter, threshold and scenario is recorded for traceability and reproducibility.
+ 
+</div>
 
 ## Outputs
 
