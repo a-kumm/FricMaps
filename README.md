@@ -91,6 +91,22 @@ Point the plugin at the directory holding these datasets: sub-folders are scanne
 
 </div>
 
+## Test dataset
+ 
+<div align="justify">
+A ready-to-run example dataset is provided so the workflow can be reproduced end to end without assembling the national data. It covers a small study area and includes the source layers, the classification table and the expected output rasters.
+ 
+</div>
+
+
+**Download:** [Seafile — FricMaps test dataset](https://seafile.unistra.fr/d/edfa7faab9ca448d866f/)
+
+ 
+<div align="justify">
+Unzip the archive, point the plugin's **base data directory** to the extracted folder, and run the four stages. See [Usage](#usage) for the step-by-step procedure.
+ 
+</div>
+
 ## Usage
  
 <div align="justify">
