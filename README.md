@@ -116,7 +116,7 @@ The plugin can be run from its interface or, for reproducible workflows, as the 
 </div>
 
 <p align="center">
-  <img src="docs/img/interface_overview.png" alt="FricMaps interface" width="800"/>
+  <img src="docs/img/volet1_fricmaps.png" alt="FricMaps interface" width="800"/>
 </p>
 <div align="justify">
   
@@ -136,7 +136,7 @@ The plugin can be run from its interface or, for reproducible workflows, as the 
 | `FRICTION_VALUE` | Resistance value; low means permeable, high means costly to cross |
  
 <p align="center">
-  <img src="docs/img/classification_table.png" alt="Classification and resistance matrix" width="800"/>
+  <img src="docs/img/volet2_fricmaps.png" alt="Classification and resistance matrix" width="800"/>
 </p>
 
 <div align="justify">
