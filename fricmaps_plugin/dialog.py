@@ -120,8 +120,9 @@ TRANSLATIONS = {
         """,
         "info_tab_vector": """
         <p style="color:{accent}; font-weight:bold; margin:0 0 2px 0;">STEP 1 &mdash; VECTOR PROCESSING</p>
-        <p style="margin-top:0;">Locates, clips and harmonises every source dataset over your study
-        area. This is the stage that builds the thematic layers later burned into the raster.</p>
+        <p style="margin-top:0;">Queries, clips and harmonises every source dataset over your study area, and turns
+        linear features (roads, railways, hedgerows, streams) into polygonal footprints so they are
+        faithfully represented at the target resolution. These layers are what the rasteriser burns in.</p>
         <p style="font-weight:bold; margin-bottom:2px;">How to proceed</p>
         <ol style="margin-top:0;">
             <li>Define the <b>study area</b>: pick a project layer or a file (SHP/GPKG), then the
@@ -138,15 +139,19 @@ TRANSLATIONS = {
         <table width="100%" cellpadding="6" bgcolor="{surface_alt}">
             <tr><td>
                 <b>Good to know.</b> Legacy Shapefile deliveries and the BD TOPO 3.x GeoPackage
-                model are both supported: field names are harmonised automatically. Leave
-                <i>Verify required datasets</i> ticked for a pre-flight completeness check.
+                model are both supported: field names are harmonised automatically. Attribute-dependent
+                buffering widens roads and railways into realistic rights-of-way, and wildlife crossings
+                (BD ORFeH) locally restore permeability. Leave <i>Verify required datasets</i> ticked for a
+                pre-flight completeness check.
             </td></tr>
         </table>
         """,
         "info_tab_raster": """
         <p style="color:{accent}; font-weight:bold; margin:0 0 2px 0;">STEP 2 &mdash; RASTERIZATION</p>
-        <p style="margin-top:0;">Converts the vector layers into the <b>land-cover raster</b> and the
-        <b>friction raster</b>, driven by the classification table below.</p>
+        <p style="margin-top:0;">Burns the harmonised layers into two rasters &mdash; a <b>land-cover map</b> and its baseline
+        <b>resistance (friction) surface</b> &mdash; driven by the classification table below. Each row is a
+        geospatial rule; a hierarchical stacking engine rasterises them by priority, so higher-priority
+        elements (roads) overwrite lower ones (land cover).</p>
         <p style="font-weight:bold; margin-bottom:2px;">Reading the table</p>
         <ul style="margin-top:0;">
             <li><b>SOURCE</b> &mdash; the dataset the class is drawn from.</li>
@@ -159,9 +164,10 @@ TRANSLATIONS = {
         </ul>
         <table width="100%" cellpadding="6" bgcolor="{surface_alt}">
             <tr><td>
-                <b>Good to know.</b> The <i>resolution</i> also drives the buffering of linear
-                features: barriers are widened proportionally so they stay continuous in the raster.
-                Any row added here becomes available as a target in the Weighting tab.
+                <b>Good to know.</b> The table is a semicolon-separated CSV, editable in place or loaded
+                from disk; a default 39-class table ships in <i>resources/</i>. The <i>resolution</i> also drives
+                the buffering of linear features, so barriers stay continuous. Any row added here becomes a
+                target in the Weighting tab.
             </td></tr>
         </table>
         """,
@@ -176,7 +182,8 @@ TRANSLATIONS = {
             <i>Distance to a layer/class</i>.</li>
             <li>Select the <b>target</b>: any class of the table or any custom source.</li>
             <li>Fill the <b>bands</b>: for each interval, the factor multiplying the friction.</li>
-            <li>Launch the processing from the button at the bottom of this tab.</li>
+            <li>Launch the full run &mdash; including the <i>no fences</i> / <i>no linear transport
+            infrastructure</i> / <i>no barriers</i> scenarios &mdash; from the button at the bottom of this tab.</li>
         </ol>
         <table width="100%" cellpadding="6" bgcolor="{surface_alt}">
             <tr><td>
@@ -204,7 +211,7 @@ TRANSLATIONS = {
                 paths and the per-step counts needed to reproduce the problem.
             </td></tr>
         </table>
-        <p style="color:{text_subtle}; font-size:10pt;">FricMaps &mdash; friction and land-cover maps
+        <p style="color:{text_subtle}; font-size:11pt;">FricMaps &mdash; friction and land-cover maps
         for ecological connectivity modelling.</p>
         """,
         "msg_error_epci": "Please select a Study Area layer.",
@@ -338,9 +345,10 @@ TRANSLATIONS = {
         """,
         "info_tab_vector": """
         <p style="color:{accent}; font-weight:bold; margin:0 0 2px 0;">&Eacute;TAPE 1 &mdash; TRAITEMENT VECTEUR</p>
-        <p style="margin-top:0;">Localise, d&eacute;coupe et harmonise l'ensemble des donn&eacute;es
-        sources sur votre zone d'&eacute;tude. C'est l'&eacute;tape qui construit les couches
-        th&eacute;matiques ensuite grav&eacute;es dans le raster.</p>
+        <p style="margin-top:0;">Interroge, d&eacute;coupe et harmonise l'ensemble des donn&eacute;es sources sur votre zone
+        d'&eacute;tude, et convertit les entit&eacute;s lin&eacute;aires (routes, voies ferr&eacute;es, haies,
+        cours d'eau) en emprises polygonales pour qu'elles soient fid&egrave;lement repr&eacute;sent&eacute;es
+        &agrave; la r&eacute;solution cible. Ce sont ces couches que le rasteriseur grave ensuite.</p>
         <p style="font-weight:bold; margin-bottom:2px;">Marche &agrave; suivre</p>
         <ol style="margin-top:0;">
             <li>D&eacute;finissez la <b>zone d'&eacute;tude</b> : une couche du projet ou un fichier
@@ -359,15 +367,21 @@ TRANSLATIONS = {
             <tr><td>
                 <b>&Agrave; savoir.</b> Les anciennes livraisons Shapefile et le mod&egrave;le
                 GeoPackage BD TOPO 3.x sont tous deux pris en charge : les noms de champs sont
-                harmonis&eacute;s automatiquement. Laissez <i>V&eacute;rifier les donn&eacute;es
-                requises</i> coch&eacute; pour un contr&ocirc;le pr&eacute;alable de compl&eacute;tude.
+                harmonis&eacute;s automatiquement. La bufferisation
+                attributaire &eacute;largit routes et voies ferr&eacute;es en emprises r&eacute;alistes, et les
+                passages faune (BD ORFeH) restaurent localement la perm&eacute;abilit&eacute;. Laissez
+                <i>V&eacute;rifier les donn&eacute;es requises</i> coch&eacute; pour un contr&ocirc;le
+                pr&eacute;alable de compl&eacute;tude.
             </td></tr>
         </table>
         """,
         "info_tab_raster": """
         <p style="color:{accent}; font-weight:bold; margin:0 0 2px 0;">&Eacute;TAPE 2 &mdash; RASTERISATION</p>
-        <p style="margin-top:0;">Convertit les couches vecteur en <b>raster d'occupation du sol</b> et
-        en <b>raster de friction</b>, pilot&eacute;s par la table de classification ci-dessous.</p>
+        <p style="margin-top:0;">Grave les couches harmonis&eacute;es en deux rasters &mdash; une <b>carte d'occupation du sol</b>
+        et sa <b>surface de r&eacute;sistance (friction)</b> de base &mdash; pilot&eacute;s par la table de
+        classification ci-dessous. Chaque ligne est une r&egrave;gle g&eacute;ospatiale ; un moteur
+        d'empilement hi&eacute;rarchique les rasterise par priorit&eacute;, si bien que les &eacute;l&eacute;ments
+        prioritaires (routes) &eacute;crasent les autres (occupation du sol).</p>
         <p style="font-weight:bold; margin-bottom:2px;">Lire la table</p>
         <ul style="margin-top:0;">
             <li><b>SOURCE</b> &mdash; la donn&eacute;e dont la classe est issue.</li>
@@ -382,10 +396,11 @@ TRANSLATIONS = {
         </ul>
         <table width="100%" cellpadding="6" bgcolor="{surface_alt}">
             <tr><td>
-                <b>&Agrave; savoir.</b> La <i>r&eacute;solution</i> pilote aussi la bufferisation des
-                entit&eacute;s lin&eacute;aires : les barri&egrave;res sont &eacute;largies
-                proportionnellement afin de rester continues dans le raster. Toute ligne
-                ajout&eacute;e ici devient une cible disponible dans l'onglet Pond&eacute;rations.
+                <b>&Agrave; savoir.</b> La table est un CSV s&eacute;par&eacute; par points-virgules,
+                &eacute;ditable sur place ou charg&eacute; depuis le disque ; une table par d&eacute;faut de
+                39 classes est fournie dans <i>resources/</i>. La <i>r&eacute;solution</i> pilote aussi la
+                bufferisation des entit&eacute;s lin&eacute;aires, pour que les barri&egrave;res restent
+                continues. Toute ligne ajout&eacute;e ici devient une cible dans l'onglet Pond&eacute;rations.
             </td></tr>
         </table>
         """,
@@ -402,7 +417,9 @@ TRANSLATIONS = {
             <li>S&eacute;lectionnez la <b>cible</b> : n'importe quelle classe de la table ou source
             personnalis&eacute;e.</li>
             <li>Renseignez les <b>bandes</b> : pour chaque intervalle, le facteur multipliant la friction.</li>
-            <li>Lancez le traitement depuis le bouton en bas de cet onglet.</li>
+            <li>Lancez le traitement complet &mdash; incluant les sc&eacute;narios <i>sans cl&ocirc;tures</i> /
+            <i>sans infrastructures de transport lin&eacute;aires</i> / <i>sans barri&egrave;res</i> &mdash;
+            depuis le bouton en bas de cet onglet.</li>
         </ol>
         <table width="100%" cellpadding="6" bgcolor="{surface_alt}">
             <tr><td>
@@ -435,7 +452,7 @@ TRANSLATIONS = {
                 n&eacute;cessaires pour reproduire le cas.
             </td></tr>
         </table>
-        <p style="color:{text_subtle}; font-size:10pt;">FricMaps &mdash; cartes de friction et
+        <p style="color:{text_subtle}; font-size:11pt;">FricMaps &mdash; cartes de friction et
         d'occupation du sol pour la mod&eacute;lisation de la connectivit&eacute; &eacute;cologique.</p>
         """,
         "msg_error_epci": "Veuillez sélectionner une couche Zone d'Étude.",
@@ -734,12 +751,15 @@ class FricMapsDialog(QDialog):
         self.setWindowTitle(TRANSLATIONS[self.current_lang]["window_title"])
         # Preferred opening size, clamped to what the screen actually offers so
         # the dialog never opens larger than the available desktop area.
-        _pref_w, _pref_h = 1440, 900
+        _pref_w, _pref_h = 1240, 800
         _screen = QApplication.primaryScreen()
         if _screen is not None:
             _avail = _screen.availableGeometry()
-            _pref_w = min(_pref_w, int(_avail.width() * 0.92))
-            _pref_h = min(_pref_h, int(_avail.height() * 0.92))
+            _pref_w = min(_pref_w, int(_avail.width() * 0.9))
+            _pref_h = min(_pref_h, int(_avail.height() * 0.9))
+        # A low floor keeps the dialog freely resizable on laptop screens; the
+        # tab contents scroll rather than imposing a large minimum size.
+        self.setMinimumSize(760, 520)
         self.resize(_pref_w, _pref_h)
 
         # Declare the window as a utility panel (Qt.Tool). On macOS this makes it
@@ -952,7 +972,13 @@ class FricMapsDialog(QDialog):
         self.btn_run_vector.clicked.connect(lambda: self.run_process(only_vectors=True))
         self.params_layout.addWidget(self.btn_run_vector)
 
-        self.tabs.addTab(self.tab_params, "")  # Title set in translate_ui
+        # Wrap the (tall) Vector tab in a scroll area so the whole dialog can
+        # be shrunk vertically without clipping the parameter groups.
+        self.params_scroll = QScrollArea()
+        self.params_scroll.setWidgetResizable(True)
+        self.params_scroll.setFrameShape(QFrame.NoFrame)
+        self.params_scroll.setWidget(self.tab_params)
+        self.tabs.addTab(self.params_scroll, "")  # Title set in translate_ui
 
         # Tab 2: Weighting options - dynamic rules engine
         self.tab_weights = QWidget()
@@ -1117,8 +1143,8 @@ class FricMapsDialog(QDialog):
         self.splitter.setStretchFactor(1, 1)
         # Stretch factors alone left the info panel too narrow to read at start.
         # Give it an explicit initial width and a floor it cannot collapse below.
-        self.right_panel.setMinimumWidth(320)
-        self.splitter.setSizes([1000, 420])
+        self.right_panel.setMinimumWidth(300)
+        self.splitter.setSizes([1180, 330])
 
         # --- Bottom Row (Full Width) ---
         # --- Bottom Section ---
@@ -1338,7 +1364,12 @@ class FricMapsDialog(QDialog):
         # would make the rendered font depend on when apply_styles() last ran -
         # which is what made the panel appear to change font on theme switch.
         self.info_browser.document().setDefaultStyleSheet(
-            "body, p, li, td, h3 { font-family:%s; } body { font-size:11pt; }" % c["font"]
+            "body, p, li, td, h3 { font-family:%(font)s; }"
+            " body { font-size:12pt; }"
+            " h3 { font-size:16pt; }"
+            " p { margin-top:8px; margin-bottom:8px; }"
+            " li { margin-bottom:7px; }"
+            " ol, ul { margin-top:4px; }" % {"font": c["font"]}
         )
         self.info_browser.setHtml(html)
 
@@ -1353,10 +1384,14 @@ class FricMapsDialog(QDialog):
 
         resources_dir = os.path.join(PLUGIN_ROOT, "resources")
         if os.path.exists(resources_dir):
+            # Only partner logos here. logo_info.png is the plugin's own logo,
+            # already shown in the info-panel header, so it must be excluded.
             logo_files = [
                 f
                 for f in os.listdir(resources_dir)
-                if f.lower().endswith((".png", ".jpg", ".jpeg"))
+                if f.lower().startswith("logo_")
+                and f.lower() != "logo_info.png"
+                and f.lower().endswith((".png", ".jpg", ".jpeg"))
             ]
             # Sort to ensure consistent order
             logo_files.sort()
@@ -2667,7 +2702,7 @@ class FricMapsDialog(QDialog):
         # Object-specific widgets that previously had hardcoded inline colours.
         self.info_browser.setStyleSheet(
             "QTextBrowser{background-color:%s; color:%s; border:1px solid %s; "
-            "border-radius:6px; padding:10px; font-family:%s; font-size:11pt;}"
+            "border-radius:6px; padding:14px; font-family:%s; font-size:12pt;}"
             % (c["surface"], c["text"], c["border"], c["font"])
         )
         self.lbl_custom_help.setStyleSheet("color:%s; padding:4px 2px;" % c["text_subtle"])
@@ -2676,7 +2711,7 @@ class FricMapsDialog(QDialog):
             QDialog, QWidget {
                 background-color: %(window)s;
                 font-family: %(font)s;
-                font-size: 11pt;
+                font-size: 12pt;
                 color: %(text)s;
             }
 
@@ -2870,9 +2905,9 @@ class FricMapsDialog(QDialog):
                 color: %(text)s;
                 border: 1px solid %(border)s;
                 border-radius: 6px;
-                padding: 10px;
+                padding: 14px;
                 font-family: %(font)s;
-                font-size: 11pt;
+                font-size: 12pt;
             }
 
             /* Labels, checkboxes, radios */
