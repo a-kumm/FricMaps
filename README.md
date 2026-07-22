@@ -103,7 +103,8 @@ A ready-to-run example dataset is provided so the workflow can be reproduced end
 
  
 <div align="justify">
-Unzip the archive, point the plugin's **base data directory** to the extracted folder, and run the four stages. See [Usage](#usage) for the step-by-step procedure.
+  
+Unzip the archive, point the plugin's **base data directory** to the extracted folder, and run the four stages.
  
 </div>
 
