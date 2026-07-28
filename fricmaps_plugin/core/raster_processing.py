@@ -28,6 +28,7 @@ Pure PyQGIS / GDAL implementation (processing.gdal:rasterize + numpy),
 with detailed logs (feature counts per filter, missing classes, etc.).
 """
 
+import logging
 import os
 import datetime
 import numpy as np
@@ -164,6 +165,7 @@ def load_table_from_csv(csv_path: str, vector_layers: dict):
                 fric = int(parts[idx_friction])
             except Exception:
                 # non-numeric value -> skip the row
+                logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
                 continue
 
             filt_raw = ""
@@ -325,6 +327,7 @@ def rasterize_classes_and_friction(
         try:
             feedback.pushInfo(msg)
         except Exception:
+            logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
             pass
 
     # Harmonise vector_layers keys
@@ -839,6 +842,7 @@ def process_dtm_from_tiles(geom_extent, crs_ref, base_dir, output_mnt_path, reso
         if os.path.exists(tmp_merge):
             os.remove(tmp_merge)
     except Exception:
+        logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
         pass
 
     return output_mnt_path
@@ -938,6 +942,7 @@ def apply_slope_weighting(
         if os.path.exists(slope_path):
             os.remove(slope_path)
     except Exception:
+        logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
         pass
 
     return path_output
@@ -1075,7 +1080,8 @@ def apply_class_distance_weighting(
     for p in (bina_path, dist_path):
         try:
             os.remove(p)
-        except:
+        except Exception:
+            logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
             pass
 
     print(f"🟢 Friction weighted by distance to class {target_class_code}: {path_output}")

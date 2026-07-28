@@ -22,6 +22,7 @@ It registers the Processing Provider and connects the toolbar button
 to the native Processing Dialog for the FricMaps algorithm.
 """
 
+import logging
 from qgis.PyQt.QtWidgets import QAction
 from qgis.PyQt.QtGui import QIcon
 from qgis.core import QgsApplication
@@ -70,6 +71,7 @@ class FricMapsPlugin:
             try:
                 self.dlg.close()
             except RuntimeError:
+                logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
                 pass
             self.dlg = None
 
@@ -78,6 +80,7 @@ class FricMapsPlugin:
                 QgsApplication.processingRegistry().removeProvider(self.provider)
             except RuntimeError:
                 # Provider C++ object might already be deleted
+                logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
                 pass
             self.provider = None
 

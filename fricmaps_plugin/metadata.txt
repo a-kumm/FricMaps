@@ -11,7 +11,7 @@ about=Resistance surfaces underpin ecological connectivity modelling, yet their 
 # documentation for available categories (Raster, Vector, Database, etc.).
 category=Raster
 # Version number of your plugin.  Increment this when you publish new releases.
-version=1.0.0
+version=1.0.1
 # Minimum and maximum QGIS versions that the plugin supports.  Adjust as
 # necessary if you test against newer QGIS releases.
 qgisMinimumVersion=3.28

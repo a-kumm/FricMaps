@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License along with
 # this program.  If not, see <https://www.gnu.org/licenses/>.
 #
+import logging
 import os
 import re
 import sqlite3
@@ -73,6 +74,7 @@ def normalize_fields(layer, aliases=None):
                 prov.deleteAttributes(fid_idx)
                 layer.updateFields()
     except Exception:
+        logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
         pass
 
     if not (prov.capabilities() & QgsVectorDataProvider.RenameAttributes):
@@ -92,6 +94,7 @@ def normalize_fields(layer, aliases=None):
             prov.renameAttributes(rename)
             layer.updateFields()
         except Exception:
+            logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
             pass
     return layer
 
@@ -136,6 +139,7 @@ def gpkg_sublayers_with_field(gpkg_path, field_name):
         finally:
             con.close()
     except Exception:
+        logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
         pass
     return out
 
@@ -189,6 +193,7 @@ def write_vector_layer(layer, path):
         if len(keep) != len(layer.fields()):
             options.attributes = keep
     except Exception:
+        logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
         pass
     QgsVectorFileWriter.writeAsVectorFormatV3(layer, path, layer.transformContext(), options)
 

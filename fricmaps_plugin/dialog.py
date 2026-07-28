@@ -16,6 +16,7 @@
 # this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import logging
 import os
 import json
 import time
@@ -613,6 +614,7 @@ class SourceDelegate(QItemDelegate):
                     if k and k not in items:
                         items.append(k)
             except Exception:
+                logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
                 pass
         editor.addItems(items)
         return editor
@@ -655,7 +657,7 @@ class IntegerDelegate(QItemDelegate):
         value = index.model().data(index, Qt.EditRole)
         try:
             editor.setValue(int(value))
-        except:
+        except (ValueError, TypeError):
             editor.setValue(0)
 
     def setModelData(self, editor, model, index):
@@ -691,7 +693,7 @@ class FloatDelegate(QItemDelegate):
         value = index.model().data(index, Qt.EditRole)
         try:
             editor.setValue(float(value))
-        except:
+        except (ValueError, TypeError):
             editor.setValue(0.0)
 
     def setModelData(self, editor, model, index):
@@ -1432,6 +1434,7 @@ class FricMapsDialog(QDialog):
         try:
             self.custom_dialog.setStyleSheet(self.styleSheet())
         except Exception:
+            logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
             pass
         self.custom_dialog.exec_()
 
@@ -1803,6 +1806,7 @@ class FricMapsDialog(QDialog):
         try:
             self.weight_cards.remove(rec)
         except ValueError:
+            logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
             pass
         rec["card"].setParent(None)
         rec["card"].deleteLater()
@@ -1822,6 +1826,7 @@ class FricMapsDialog(QDialog):
                     }
                 )
             except ValueError:
+                logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
                 continue
         return bands
 
@@ -2271,6 +2276,7 @@ class FricMapsDialog(QDialog):
                             return lyr
                 break
         except Exception:
+            logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
             pass
 
         # 2. Built-in → processed output file in the output directory.

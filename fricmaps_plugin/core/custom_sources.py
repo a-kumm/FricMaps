@@ -50,6 +50,7 @@ Data model (one entry per custom source)::
 """
 
 from __future__ import annotations
+import logging
 
 import os
 import json
@@ -131,6 +132,7 @@ def normalize_source_definition(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]
                 }
             )
         except (AttributeError, TypeError, ValueError):
+            logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
             continue
 
     def as_bool(v, default=False):

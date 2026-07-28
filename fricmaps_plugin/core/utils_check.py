@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License along with
 # this program.  If not, see <https://www.gnu.org/licenses/>.
 #
+import logging
 import os
 import re
 import sqlite3
@@ -50,6 +51,7 @@ def _gpkg_layers_matching(gpkg_path, name_patterns):
                 out.append(tname)
     except Exception:
         # Not a valid gpkg / locked / no gpkg_contents → just skip it.
+        logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
         pass
     return out
 

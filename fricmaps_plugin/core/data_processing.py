@@ -39,6 +39,7 @@ be layered on top by calling code.
 """
 
 from __future__ import annotations
+import logging
 
 import os
 from typing import List, Optional, Tuple
@@ -399,6 +400,7 @@ def _get_intersecting_dept_codes(
                 geom_search = QgsGeometry(extent)
                 geom_search.transform(xform)
             except Exception:
+                logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
                 continue
         else:
             geom_search = extent
@@ -521,6 +523,7 @@ def process_vegetation_data(
                     },
                 )["OUTPUT"]
             except Exception:
+                logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
                 pass
 
     # Debug export of the clipped/normalised vegetation
@@ -794,6 +797,7 @@ def process_rpg_data(
             if layer and layer.isValid() and layer.featureCount() > 0:
                 clipped_layers.append(layer)
         except Exception:
+            logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
             continue
     if not clipped_layers:
         raise RuntimeError("Failed to process RPG files for the study area")
@@ -1466,6 +1470,7 @@ def process_linear_transport_infrastructure(
                     # for both the legacy and the new data model.
                     clipped.append(normalize_fields(lyr))
             except Exception:
+                logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
                 continue
         if not clipped:
             return None
@@ -1506,6 +1511,7 @@ def process_linear_transport_infrastructure(
             if out and out.isValid():
                 return out
         except Exception:
+            logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
             pass
         lyr = processing.run("native:fixgeometries", {"INPUT": layer, "OUTPUT": "memory:"})[
             "OUTPUT"
@@ -2235,6 +2241,7 @@ def process_dense_built_areas(
             if out and out.isValid() and out.featureCount() > 0:
                 zone_clipped.append(out)
         except Exception:
+            logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
             pass
 
     zone = _merge(zone_clipped)
@@ -2280,6 +2287,7 @@ def process_dense_built_areas(
             if out and out.isValid() and out.featureCount() > 0:
                 bat_clipped.append(out)
         except Exception:
+            logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
             pass
 
     buildings = _merge(bat_clipped)
