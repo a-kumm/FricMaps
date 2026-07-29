@@ -45,7 +45,7 @@ Beyond standard land cover, the workflow explicitly integrates underrepresented 
 
 ## Requirements
 
-- QGIS **3.28 LTR** or newer (tested up to 3.3x)
+- QGIS **3.28 LTR** or newer (tested up to 4.2.0)
 - No external Python dependency: the plugin relies solely on PyQGIS, GDAL and the native Processing algorithms shipped with QGIS
 
 ## Installation
