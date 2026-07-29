@@ -5,6 +5,11 @@
 [![QGIS](https://img.shields.io/badge/QGIS-%E2%89%A5%203.28-93b023.svg)](https://qgis.org)
 [![Version](https://img.shields.io/badge/version-1.0.0-informational.svg)](CHANGELOG.md)
 
+
+> 🎉 **FricMaps is now available on the official QGIS plugin repository!**
+> You can install it directly from QGIS (*Plugins → Manage and Install Plugins*) or check out its page here:
+> 👉 [plugins.qgis.org/plugins/fricmaps_plugin](https://plugins.qgis.org/plugins/fricmaps_plugin/#plugin-about)
+
 <div align="justify">
   
 **FricMaps** is an open-source QGIS plugin that automates the generation of standardised land-cover and **resistance surfaces** for ecological connectivity modelling at 5 m resolution. It turns heterogeneous vector datasets into analysis-ready rasters through a modular vector-preprocessing and rule-based rasterisation workflow, exporting surfaces directly compatible with connectivity-modelling tools such as [Graphab](https://sourcesup.renater.fr/www/graphab/).
