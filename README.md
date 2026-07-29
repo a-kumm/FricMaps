@@ -7,7 +7,7 @@
 
 
 > 🎉 **FricMaps is now available on the official QGIS plugin repository!**
-> You can install it directly from QGIS (*Plugins → Manage and Install Plugins*) or check out its page here:
+> You can install it directly from QGIS (*Plugins → Manage and Install Plugins*) and ready for QGIS 4.XX or check out its page here:
 > 👉 [plugins.qgis.org/plugins/fricmaps_plugin](https://plugins.qgis.org/plugins/fricmaps_plugin/#plugin-about)
 
 <div align="justify">
