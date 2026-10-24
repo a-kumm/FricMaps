@@ -400,7 +400,7 @@ TRANSLATIONS = {
             <tr><td>
                 <b>&Agrave; savoir.</b> La table est un CSV s&eacute;par&eacute; par points-virgules,
                 &eacute;ditable sur place ou charg&eacute; depuis le disque ; une table par d&eacute;faut de
-                39 classes est fournie dans <i>resources/</i>. La <i>r&eacute;solution</i> pilote aussi la
+                40 classes est fournie dans <i>resources/</i>. La <i>r&eacute;solution</i> pilote aussi la
                 bufferisation des entit&eacute;s lin&eacute;aires, pour que les barri&egrave;res restent
                 continues. Toute ligne ajout&eacute;e ici devient une cible dans l'onglet Pond&eacute;rations.
             </td></tr>
