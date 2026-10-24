@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: "FricMaps: an open QGIS plugin to generate land-cover and resistance surfaces for Graphab"
+title: "FricMaps: an open-source QGIS plugin to generate land-cover and resistance surfaces for connectivity modelling at 5-m resolution over the French territory"
 message: "If you use this software, please cite it as below."
 type: software
 authors:
@@ -44,9 +44,11 @@ abstract: >-
   rule-based rasterisation engine driven by a user-editable classification
   table. The workflow explicitly integrates underrepresented anthropogenic
   barriers such as fences, applies attribute-dependent buffering of roads and
-  railways, and uses wildlife crossing structures to locally restore
-  permeability at validated locations. It ingests French national datasets
+  railways, and locally removes the infrastructure footprint at selected
+  wildlife crossing structures. It ingests French national datasets
   (BD TOPO, OCS GE, RPG, RGE ALTI) in both Shapefile and GeoPackage
   deliveries, supports user-defined custom data sources, and applies
   configurable multiplicative weighting rules. Outputs are ready for
-  graph-based connectivity analysis, for instance with Graphab.
+  graph-based connectivity analysis, for instance with Graphab. Source code:
+  GPL-3.0-or-later; documentation, default classification table and figures:
+  CC-BY-4.0.
