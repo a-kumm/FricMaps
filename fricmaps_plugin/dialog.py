@@ -142,9 +142,9 @@ TRANSLATIONS = {
             <tr><td>
                 <b>Good to know.</b> Legacy Shapefile deliveries and the BD TOPO 3.x GeoPackage
                 model are both supported: field names are harmonised automatically. Attribute-dependent
-                buffering widens roads and railways into realistic rights-of-way, and wildlife crossings
-                (BD ORFeH) locally restore permeability. Leave <i>Verify required datasets</i> ticked for a
-                pre-flight completeness check.
+                buffering widens roads and railways into rights-of-way, and the infrastructure footprint
+                is locally removed at selected wildlife crossing structures (BD ORFEH). Leave 
+                <i>Verify required datasets</i> ticked for apre-flight completeness check.
             </td></tr>
         </table>
         """,
