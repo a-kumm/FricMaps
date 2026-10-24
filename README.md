@@ -24,8 +24,7 @@ Resistance surfaces are the backbone of ecological connectivity modelling, but b
 
 FricMaps addresses this by standardising the whole chain. Heterogeneous national and open datasets are harmonised through a modular vector-preprocessing workflow, then converted into land-cover and resistance rasters by a rule-based rasterisation engine. Every thematic decision — land-cover classes, resistance values, compilation order — is defined in a single user-editable classification table, so the mapping from data to surface is explicit and fully documented rather than hidden in code.
 
-Beyond standard land cover, the workflow explicitly integrates underrepresented anthropogenic barriers such as fences, applies attribute-dependent buffering of roads and railways, and uses wildlife crossing structures (e.g. BD ORFeH) to locally restore permeability at validated locations. Contextual weighting by slope and urban influence, together with built-in scenario generation, makes FricMaps suited to reproducible, scenario-based connectivity assessments over large administrative extents.
-
+Beyond standard land cover, the workflow explicitly integrates underrepresented anthropogenic barriers such as fences, applies attribute-dependent buffering of roads and railways, and locally removes the infrastructure footprint at selected wildlife crossing structures (e.g. BD ORFeH). Contextual weighting by slope and urban influence, together with built-in scenario generation, is intended to support reproducible, scenario-based connectivity assessments over large administrative extents.
 </div>
 
 ## Features
@@ -186,7 +185,7 @@ fricmaps_plugin/     THE PLUGIN - zip this folder, or drop it into the QGIS
   resources/           default classification table, interface images
 docs/                user guide and design notes
 README.md            this file
-LICENSE              GPL-3.0-or-later (code) + CC BY 4.0 (docs and data)
+LICENSE              GPL-3.0-or-later (code) + CC BY 4.0 (documentation, classification table and figures)
 CHANGELOG.md         release history
 CITATION.cff         citation metadata
 pyproject.toml       formatting and linting configuration
