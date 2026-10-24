@@ -34,7 +34,7 @@ Beyond standard land cover, the workflow explicitly integrates underrepresented 
 
 - **Automated preprocessing** — heterogeneous national datasets (OCS GE, RPG, BD TOPO®, RGE ALTI®, BD ORFeH) are queried, clipped and harmonised into consistent thematic layers, ready for rasterisation at 5 m.
 - **Attribute-dependent buffering** — roads and railways are turned into polygonal rights-of-way whose width is derived from their attributes, so barrier footprints are represented realistically rather than as uniform lines.
-- **Conditional permeability** — validated wildlife crossings (BD ORFeH) locally erase overlapping transport infrastructure, keeping barriers continuous except at functional crossing nodes; fences and photovoltaic parks are integrated as underrepresented anthropogenic barriers.
+- **Conditional permeability** — at selected wildlife crossing structures (BD ORFeH), the overlapping transport infrastructure is locally erased and the underlying land-cover class is retained; elsewhere, barriers remain continuous. Fences and photovoltaic parks are integrated as underrepresented anthropogenic barriers.
 - **Data-driven rasterisation** — a single user-editable classification table (CSV: source, SQL filter, priority, class code, resistance value) drives the output through a hierarchical stacking engine, yielding both a land-cover map and a resistance surface without touching the code.
 - **Custom sources & weighting** — register any extra vector dataset from the interface, and modulate the baseline resistance by slope (Sobel, from the DEM) or distance to any class or source, through user-defined bands.
 - **Scenario generation** — alternative surfaces (no fences, no linear transport infrastructure, no barriers) are produced by local value replacement, avoiding artificial discontinuities and re-running the vector stage.
@@ -146,7 +146,7 @@ The plugin can be run from its interface or, for reproducible workflows, as the 
 
 <div align="justify">
   
-The matrix is a semicolon-separated CSV, editable in place or loaded from disk; a default table of 39 classes is provided in `fricmaps_plugin/resources/`. Editing it recalibrates the whole run — new classes, land-use scenarios or resistance profiles — without touching the code. This stage produces two rasters: a land-cover map and the associated baseline resistance surface.
+The matrix is a semicolon-separated CSV, editable in place or loaded from disk; a default table of 40 classes is provided in `fricmaps_plugin/resources/`. Editing it recalibrates the whole run — new classes, land-use scenarios or resistance profiles — without touching the code. This stage produces two rasters: a land-cover map and the associated baseline resistance surface.
  
 **3 — Weighting.** Apply contextual weightings on top of the baseline resistance. Each rule targets the slope (from the DEM) or the distance to any class or custom source, through user-defined bands and multipliers — the mechanism used to model topographic cost or the diffuse deterrence of human presence. A factor of `1.0` is neutral; below 1 makes a zone more permeable. The run, including the *no fences* / *no linear transport infrastructure* / *no barriers* scenarios, is launched from the bottom of this tab.
  
