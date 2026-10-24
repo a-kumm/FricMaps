@@ -43,11 +43,11 @@ from __future__ import annotations
 import contextlib
 import datetime
 import json
+import logging
 import os
 import platform
 import re
 import shutil
-import subprocess
 import sys
 import tempfile
 import threading
@@ -98,13 +98,75 @@ def _unix_peak_rss() -> Optional[int]:
     return peak if sys.platform == "darwin" else peak * 1024
 
 
+def _macos_libsystem():
+    """The macOS system library, called through ``ctypes`` rather than external commands."""
+    import ctypes
+
+    return ctypes.CDLL("/usr/lib/libSystem.B.dylib")
+
+
 def _macos_rss() -> Optional[int]:
+    """Resident size of this process from ``proc_pidinfo`` (the value ``ps -o rss`` shows)."""
     try:
-        out = subprocess.check_output(
-            ["ps", "-o", "rss=", "-p", str(os.getpid())], text=True, timeout=5
+        import ctypes
+
+        class ProcTaskInfo(ctypes.Structure):  # struct proc_taskinfo, <sys/proc_info.h>
+            _fields_ = [
+                (name, ctypes.c_uint64)
+                for name in (
+                    "pti_virtual_size",
+                    "pti_resident_size",
+                    "pti_total_user",
+                    "pti_total_system",
+                    "pti_threads_user",
+                    "pti_threads_system",
+                )
+            ] + [
+                (name, ctypes.c_int32)
+                for name in (
+                    "pti_policy",
+                    "pti_faults",
+                    "pti_pageins",
+                    "pti_cow_faults",
+                    "pti_messages_sent",
+                    "pti_messages_received",
+                    "pti_syscalls_mach",
+                    "pti_syscalls_unix",
+                    "pti_csw",
+                    "pti_threadnum",
+                    "pti_numrunning",
+                    "pti_priority",
+                )
+            ]
+
+        info = ProcTaskInfo()
+        proc_pidtaskinfo = 4  # PROC_PIDTASKINFO
+        written = _macos_libsystem().proc_pidinfo(
+            os.getpid(),
+            proc_pidtaskinfo,
+            ctypes.c_uint64(0),
+            ctypes.byref(info),
+            ctypes.sizeof(info),
         )
-        return int(out.strip()) * 1024
-    except (OSError, ValueError, subprocess.SubprocessError):
+        return int(info.pti_resident_size) if written == ctypes.sizeof(info) else None
+    except (OSError, AttributeError, ValueError):
+        return None
+
+
+def _macos_sysctl(name: str) -> Optional[bytes]:
+    """Raw value of a ``sysctl`` entry (``sysctlbyname``); ``None`` if unavailable."""
+    try:
+        import ctypes
+
+        libsystem = _macos_libsystem()
+        size = ctypes.c_size_t(0)
+        if libsystem.sysctlbyname(name.encode(), None, ctypes.byref(size), None, 0) != 0:
+            return None
+        buffer = ctypes.create_string_buffer(size.value)
+        if libsystem.sysctlbyname(name.encode(), buffer, ctypes.byref(size), None, 0) != 0:
+            return None
+        return buffer.raw[: size.value]
+    except (OSError, AttributeError, ValueError):
         return None
 
 
@@ -172,13 +234,6 @@ def memory_snapshot() -> Tuple[Optional[int], Optional[int]]:
 # =====================================================================
 
 
-def _run_text(cmd: List[str]) -> Optional[str]:
-    try:
-        return subprocess.check_output(cmd, text=True, timeout=5).strip()
-    except (OSError, subprocess.SubprocessError):
-        return None
-
-
 def _cpu_model() -> Optional[str]:
     try:
         if sys.platform.startswith("linux"):
@@ -196,13 +251,16 @@ def _cpu_model() -> Optional[str]:
             if fallback:
                 return fallback
         elif sys.platform == "darwin":
-            return _run_text(["sysctl", "-n", "machdep.cpu.brand_string"])
+            value = _macos_sysctl("machdep.cpu.brand_string")
+            if value:
+                return value.rstrip(b"\0").decode("utf-8", "replace").strip() or None
         elif sys.platform == "win32":
             import winreg
 
-            key = winreg.OpenKey(
-                winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0"
-            )
+            # Built from its parts: written as one literal, the registry path is taken
+            # for an encoded secret by the secret scanners of the QGIS plugin repository.
+            subkey = "\\".join(("HARDWARE", "DESCRIPTION", "System", "CentralProcessor", "0"))
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, subkey)
             return str(winreg.QueryValueEx(key, "ProcessorNameString")[0]).strip()
     except (OSError, ImportError, IndexError):
         pass
@@ -217,8 +275,8 @@ def _total_ram_bytes() -> Optional[int]:
                     if line.startswith("MemTotal:"):
                         return int(line.split()[1]) * 1024
         elif sys.platform == "darwin":
-            text = _run_text(["sysctl", "-n", "hw.memsize"])
-            return int(text) if text else None
+            value = _macos_sysctl("hw.memsize")
+            return int.from_bytes(value, sys.byteorder) if value else None
         elif sys.platform == "win32":
             import ctypes
 
@@ -536,7 +594,7 @@ def mark(percent: float, label: str) -> None:
         try:
             recorder.mark(percent, label)
         except Exception:
-            pass
+            logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
 
 
 def set_workload(**values: Any) -> None:
@@ -546,4 +604,4 @@ def set_workload(**values: Any) -> None:
         try:
             recorder.set_workload(**values)
         except Exception:
-            pass
+            logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)

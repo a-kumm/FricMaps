@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.1] - 2026-10-24
+
+### Fixed
+- Issues raised by the security scan of the QGIS plugin repository, which
+  blocked 1.2.0. The performance report no longer runs external commands on
+  macOS: memory, CPU model and RAM are read from the system library through
+  `ctypes` (`proc_pidinfo`, `sysctlbyname`) instead of `ps` and `sysctl`, with
+  the same values. Exceptions deliberately ignored while recording performance
+  are logged at debug level instead of being passed silently, and a Windows
+  registry path is no longer taken for an encoded secret.
+
 ## [1.2.0] - 2026-10-24
 
 ### Added

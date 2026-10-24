@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import functools
 import inspect
+import logging
 import os
 from typing import Any, Dict, Optional, Callable
 
@@ -140,7 +141,7 @@ def _write_performance_report(
             try:
                 recorder.set_workload(**_count_classes(classes_path, _SCENARIO_CLASS_CODES))
             except Exception:
-                pass
+                logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
         name = f"Performance_{clean_name(params['area_name'])}.json"
         path = recorder.write(os.path.join(work_dir, name))
         table = recorder.format_table()
@@ -310,7 +311,7 @@ def run_pipeline(
     try:
         perf.set_workload(crs=crs.authid(), **_extent_workload(extent_geom, resolution))
     except Exception:
-        pass
+        logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
 
     # 1.5 Check required datasets
     # NOTE: only the built-in socle datasets (BD TOPO, OCS GE, RPG) are verified
@@ -586,7 +587,7 @@ def run_pipeline(
             }
         )
     except Exception:
-        pass
+        logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
 
     # 4. Load Classification Table
     progress(55, "Loading Classification Table...")
