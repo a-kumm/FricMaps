@@ -279,7 +279,7 @@ def _ensure_vector_on_disk(layer: QgsVectorLayer, tmp_dir: str, suffix: str = ""
     error = result[0]
     new_path = result[1] if len(result) > 1 and result[1] else out_path
 
-    if error != QgsVectorFileWriter.NoError:
+    if error != QgsVectorFileWriter.WriterError.NoError:
         raise RuntimeError(
             f"❌ Failed to export layer '{layer.name()}' to {out_path} (error {error})"
         )
@@ -476,7 +476,10 @@ def rasterize_classes_and_friction(
         # areas, already-buffered hedges) are left untouched.
         try:
             gtype = QgsWkbTypes.geometryType(layer_to_raster.wkbType())
-            if gtype in (QgsWkbTypes.LineGeometry, QgsWkbTypes.PointGeometry):
+            if gtype in (
+                QgsWkbTypes.GeometryType.LineGeometry,
+                QgsWkbTypes.GeometryType.PointGeometry,
+            ):
                 buf_dist = LINE_BUFFER_FACTOR * float(resolution)
                 if buf_dist > 0:
                     _b = processing.run(

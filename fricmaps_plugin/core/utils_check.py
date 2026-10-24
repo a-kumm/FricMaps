@@ -92,7 +92,7 @@ def check_required_datasets(
         if log_callback:
             log_callback(msg)
         else:
-            QgsMessageLog.logMessage(msg, "FricMaps", Qgis.Info)
+            QgsMessageLog.logMessage(msg, "FricMaps", Qgis.MessageLevel.Info)
 
     log("🔍 Checking required datasets...")
 

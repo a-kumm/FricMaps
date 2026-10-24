@@ -23,7 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - `qgisMaximumVersion` raised to 4.99 so that the plugin can be installed on
-  QGIS 4. Compatibility with Qt 6 is not yet complete.
+  QGIS 4. Following the Qt 6 check of the QGIS plugin repository, Qt and QGIS
+  enums are written in their fully qualified form (`Qt.ItemDataRole.EditRole`
+  instead of `Qt.EditRole`), and `exec_()` and `QRegExp`, removed in Qt 6, are
+  replaced by `exec()` and `QRegularExpression`. These forms also work with
+  QGIS 3. The plugin has not yet been tested on QGIS 4.
 
 ### Fixed
 - Results no longer depend on the operating system when the BD TOPO departments

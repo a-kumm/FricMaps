@@ -54,8 +54,8 @@ from qgis.PyQt.QtWidgets import (
     QToolButton,
     QScrollArea,
 )
-from qgis.PyQt.QtCore import Qt, pyqtSignal, QObject, QRegExp
-from qgis.PyQt.QtGui import QRegExpValidator, QPalette, QColor, QIcon, QPixmap
+from qgis.PyQt.QtCore import Qt, pyqtSignal, QObject, QRegularExpression
+from qgis.PyQt.QtGui import QRegularExpressionValidator, QPalette, QColor, QIcon, QPixmap
 from qgis.gui import (
     QgsMapLayerComboBox,
     QgsFieldComboBox,
@@ -621,14 +621,14 @@ class SourceDelegate(QItemDelegate):
         return editor
 
     def setEditorData(self, editor, index):
-        value = index.model().data(index, Qt.EditRole)
+        value = index.model().data(index, Qt.ItemDataRole.EditRole)
         if value:
             idx = editor.findText(value)
             if idx >= 0:
                 editor.setCurrentIndex(idx)
 
     def setModelData(self, editor, model, index):
-        model.setData(index, editor.currentText(), Qt.EditRole)
+        model.setData(index, editor.currentText(), Qt.ItemDataRole.EditRole)
 
 
 class UppercaseDelegate(QItemDelegate):
@@ -637,13 +637,13 @@ class UppercaseDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
         # Regex: Uppercase letters, numbers, underscores, no spaces
-        regex = QRegExp("[A-Z0-9_]+")
-        validator = QRegExpValidator(regex, editor)
+        regex = QRegularExpression("[A-Z0-9_]+")
+        validator = QRegularExpressionValidator(regex, editor)
         editor.setValidator(validator)
         return editor
 
     def setModelData(self, editor, model, index):
-        model.setData(index, editor.text().upper(), Qt.EditRole)
+        model.setData(index, editor.text().upper(), Qt.ItemDataRole.EditRole)
 
 
 class IntegerDelegate(QItemDelegate):
@@ -655,14 +655,14 @@ class IntegerDelegate(QItemDelegate):
         return editor
 
     def setEditorData(self, editor, index):
-        value = index.model().data(index, Qt.EditRole)
+        value = index.model().data(index, Qt.ItemDataRole.EditRole)
         try:
             editor.setValue(int(value))
         except (ValueError, TypeError):
             editor.setValue(0)
 
     def setModelData(self, editor, model, index):
-        model.setData(index, str(editor.value()), Qt.EditRole)
+        model.setData(index, str(editor.value()), Qt.ItemDataRole.EditRole)
 
 
 class SqlDelegate(QItemDelegate):
@@ -691,14 +691,14 @@ class FloatDelegate(QItemDelegate):
         return editor
 
     def setEditorData(self, editor, index):
-        value = index.model().data(index, Qt.EditRole)
+        value = index.model().data(index, Qt.ItemDataRole.EditRole)
         try:
             editor.setValue(float(value))
         except (ValueError, TypeError):
             editor.setValue(0.0)
 
     def setModelData(self, editor, model, index):
-        model.setData(index, str(editor.value()), Qt.EditRole)
+        model.setData(index, str(editor.value()), Qt.ItemDataRole.EditRole)
 
 
 class CollapsibleSection(QWidget):
@@ -716,10 +716,10 @@ class CollapsibleSection(QWidget):
         self.header.setText(title)
         self.header.setCheckable(True)
         self.header.setChecked(expanded)
-        self.header.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.header.setArrowType(Qt.DownArrow if expanded else Qt.RightArrow)
-        self.header.setCursor(Qt.PointingHandCursor)
-        self.header.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.header.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.header.setArrowType(Qt.ArrowType.DownArrow if expanded else Qt.ArrowType.RightArrow)
+        self.header.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.header.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.header.clicked.connect(self._on_toggle)
         outer.addWidget(self.header)
 
@@ -732,7 +732,7 @@ class CollapsibleSection(QWidget):
 
     def _on_toggle(self, checked):
         self.body.setVisible(checked)
-        self.header.setArrowType(Qt.DownArrow if checked else Qt.RightArrow)
+        self.header.setArrowType(Qt.ArrowType.DownArrow if checked else Qt.ArrowType.RightArrow)
 
     def setTitle(self, title):
         self.header.setText(title)
@@ -765,15 +765,15 @@ class FricMapsDialog(QDialog):
         self.setMinimumSize(760, 520)
         self.resize(_pref_w, _pref_h)
 
-        # Declare the window as a utility panel (Qt.Tool). On macOS this makes it
+        # Declare the window as a utility panel (Qt.WindowType.Tool). On macOS this makes it
         # follow the active app and float over a FULLSCREEN QGIS in the SAME Space,
         # instead of opening on another desktop and bouncing between Spaces.
         self.setWindowFlags(
-            Qt.Tool
-            | Qt.WindowTitleHint
-            | Qt.WindowSystemMenuHint
-            | Qt.WindowCloseButtonHint
-            | Qt.WindowMinMaxButtonsHint
+            Qt.WindowType.Tool
+            | Qt.WindowType.WindowTitleHint
+            | Qt.WindowType.WindowSystemMenuHint
+            | Qt.WindowType.WindowCloseButtonHint
+            | Qt.WindowType.WindowMinMaxButtonsHint
         )
 
         # Set Window Icon
@@ -787,7 +787,7 @@ class FricMapsDialog(QDialog):
         self.main_layout = QVBoxLayout(self)
 
         # Splitter for resizable panels
-        self.splitter = QSplitter(Qt.Horizontal)
+        self.splitter = QSplitter(Qt.Orientation.Horizontal)
         self.main_layout.addWidget(self.splitter, stretch=1)
 
         # --- Left Panel (Controls & Logs) ---
@@ -857,14 +857,14 @@ class FricMapsDialog(QDialog):
         # Layer Selection
         self.lbl_epci = QLabel(TRANSLATIONS[self.current_lang]["lbl_epci"])
         self.epci_layer_cb = QgsMapLayerComboBox()
-        self.epci_layer_cb.setFilters(QgsMapLayerProxyModel.PolygonLayer)
+        self.epci_layer_cb.setFilters(QgsMapLayerProxyModel.Filter.PolygonLayer)
         self.layout_input.addRow(self.lbl_epci, self.epci_layer_cb)
 
         # File Selection
         self.lbl_epci_file = QLabel(TRANSLATIONS[self.current_lang]["lbl_epci_file"])
         self.epci_file_widget = QgsFileWidget()
         self.epci_file_widget.setFilter("Vector files (*.shp *.gpkg *.geojson)")
-        self.epci_file_widget.setStorageMode(QgsFileWidget.GetFile)
+        self.epci_file_widget.setStorageMode(QgsFileWidget.StorageMode.GetFile)
         self.layout_input.addRow(self.lbl_epci_file, self.epci_file_widget)
 
         self.lbl_epci_file.setVisible(False)
@@ -885,14 +885,14 @@ class FricMapsDialog(QDialog):
         self.lbl_area_name = QLabel()
         self.area_name_cb = QComboBox(self.tab_params)
         self.area_name_cb.setEditable(True)
-        self.area_name_cb.setInsertPolicy(QComboBox.InsertAtTop)
+        self.area_name_cb.setInsertPolicy(QComboBox.InsertPolicy.InsertAtTop)
         self.area_name_cb.setPlaceholderText("Select or type area name...")
         self.layout_input.addRow(self.lbl_area_name, self.area_name_cb)
 
         # Base Data Directory
         self.lbl_base_dir = QLabel()
         self.base_dir_widget = QgsFileWidget(self.tab_params)
-        self.base_dir_widget.setStorageMode(QgsFileWidget.GetDirectory)
+        self.base_dir_widget.setStorageMode(QgsFileWidget.StorageMode.GetDirectory)
         self.layout_input.addRow(self.lbl_base_dir, self.base_dir_widget)
 
         # Custom sources manager (opens a pop-up)
@@ -926,7 +926,7 @@ class FricMapsDialog(QDialog):
         self.lbl_csv = QLabel()
         self.table_csv_widget = QgsFileWidget(self.tab_params)
         self.table_csv_widget.setFilter("CSV Files (*.csv)")
-        self.table_csv_widget.setStorageMode(QgsFileWidget.GetFile)
+        self.table_csv_widget.setStorageMode(QgsFileWidget.StorageMode.GetFile)
 
         # Set default CSV path
         default_csv = os.path.join(PLUGIN_ROOT, "resources", "Table_Raster.csv")
@@ -953,7 +953,7 @@ class FricMapsDialog(QDialog):
         # Output Directory
         self.lbl_output_dir = QLabel()
         self.output_dir_widget = QgsFileWidget(self.tab_params)
-        self.output_dir_widget.setStorageMode(QgsFileWidget.GetDirectory)
+        self.output_dir_widget.setStorageMode(QgsFileWidget.StorageMode.GetDirectory)
         self.layout_output.addRow(self.lbl_output_dir, self.output_dir_widget)
 
         # Save Intermediate Vectors
@@ -979,7 +979,7 @@ class FricMapsDialog(QDialog):
         # be shrunk vertically without clipping the parameter groups.
         self.params_scroll = QScrollArea()
         self.params_scroll.setWidgetResizable(True)
-        self.params_scroll.setFrameShape(QFrame.NoFrame)
+        self.params_scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.params_scroll.setWidget(self.tab_params)
         self.tabs.addTab(self.params_scroll, "")  # Title set in translate_ui
 
@@ -1004,7 +1004,7 @@ class FricMapsDialog(QDialog):
         # Scroll area hosting the dynamic weighting cards
         self.weights_scroll = QScrollArea()
         self.weights_scroll.setWidgetResizable(True)
-        self.weights_scroll.setFrameShape(QFrame.NoFrame)
+        self.weights_scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.weights_host = QWidget()
         self.weight_cards_layout = QVBoxLayout(self.weights_host)
         self.weight_cards_layout.setContentsMargins(0, 0, 0, 0)
@@ -1098,11 +1098,11 @@ class FricMapsDialog(QDialog):
         # Weighting tab (it launches rasterisation AND weighting).
 
         # Table Expansion
-        self.table_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.table_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # Column delegates are assigned by HEADER NAME in load_csv_table()
         # (the CSV column order is not fixed), so nothing hardcoded here.
-        self.table_widget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table_widget.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         self.table_widget.cellDoubleClicked.connect(self.open_sql_builder)
         # Editing the raster table (e.g. a new CLASS_NAME) must refresh the
@@ -1408,14 +1408,18 @@ class FricMapsDialog(QDialog):
 
                 # Scale pixmap to fit height (e.g., 45px for slightly larger logos)
                 if not pixmap.isNull():
-                    scaled_pixmap = pixmap.scaledToHeight(45, Qt.SmoothTransformation)
+                    scaled_pixmap = pixmap.scaledToHeight(
+                        45, Qt.TransformationMode.SmoothTransformation
+                    )
                     lbl_logo.setPixmap(scaled_pixmap)
                     lbl_logo.setToolTip(logo_file)
 
                     # Grid positioning: 2 columns
                     row = i // 2
                     col = i % 2
-                    self.logos_layout.addWidget(lbl_logo, row, col, alignment=Qt.AlignCenter)
+                    self.logos_layout.addWidget(
+                        lbl_logo, row, col, alignment=Qt.AlignmentFlag.AlignCenter
+                    )
 
     # --- Custom Sources Tab ---
     # Source columns: 0=Key 1=Label 2=Type 3=File/Layer 4=Buffer 5=SQL filter
@@ -1437,7 +1441,7 @@ class FricMapsDialog(QDialog):
         except Exception:
             logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
             pass
-        self.custom_dialog.exec_()
+        self.custom_dialog.exec()
 
     def _build_custom_sources_ui(self):
         """Build the custom-sources manager as a pop-up dialog (opened from tab 1)."""
@@ -1446,9 +1450,12 @@ class FricMapsDialog(QDialog):
         # Utility panel + modal to the plugin window only → stays in the same
         # macOS Space as the (fullscreen) QGIS, no desktop switching.
         self.custom_dialog.setWindowFlags(
-            Qt.Tool | Qt.WindowTitleHint | Qt.WindowSystemMenuHint | Qt.WindowCloseButtonHint
+            Qt.WindowType.Tool
+            | Qt.WindowType.WindowTitleHint
+            | Qt.WindowType.WindowSystemMenuHint
+            | Qt.WindowType.WindowCloseButtonHint
         )
-        self.custom_dialog.setWindowModality(Qt.WindowModal)
+        self.custom_dialog.setWindowModality(Qt.WindowModality.WindowModal)
         self.custom_dialog.resize(1020, 660)
         icon_path = os.path.join(PLUGIN_ROOT, "icon.png")
         if os.path.exists(icon_path):
@@ -1467,15 +1474,15 @@ class FricMapsDialog(QDialog):
 
         self.table_custom = QTableWidget(0, len(self.CUSTOM_COLS))
         hh = self.table_custom.horizontalHeader()
-        hh.setSectionResizeMode(QHeaderView.Interactive)
+        hh.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         hh.setStretchLastSection(True)
         self.table_custom.setColumnWidth(0, 150)  # key
         self.table_custom.setColumnWidth(1, 150)  # label
         self.table_custom.setColumnWidth(2, 110)  # type
         self.table_custom.setColumnWidth(3, 260)  # file/layer
         self.table_custom.setColumnWidth(4, 90)  # buffer
-        self.table_custom.setSelectionBehavior(QTableWidget.SelectRows)
-        self.table_custom.setSelectionMode(QTableWidget.SingleSelection)
+        self.table_custom.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.table_custom.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table_custom.verticalHeader().setDefaultSectionSize(36)
         self.table_custom.verticalHeader().setVisible(False)
         self.grp_custom_v.addWidget(self.table_custom)
@@ -1539,10 +1546,10 @@ class FricMapsDialog(QDialog):
             if layer is not None
             else QgsExpressionBuilderDialog(None, current, self.custom_dialog)
         )
-        dlg.setWindowFlags(dlg.windowFlags() | Qt.Tool)
+        dlg.setWindowFlags(dlg.windowFlags() | Qt.WindowType.Tool)
         dlg.setWindowTitle("SQL filter - " + (layer.name() if layer is not None else "source"))
         dlg.expressionBuilder().setExpressionText(current)
-        if dlg.exec_():
+        if dlg.exec():
             self.table_custom.setItem(
                 row, 5, QTableWidgetItem(dlg.expressionBuilder().expressionText())
             )
@@ -1571,13 +1578,13 @@ class FricMapsDialog(QDialog):
         lay.setSpacing(0)
 
         file_w = QgsFileWidget()
-        file_w.setStorageMode(QgsFileWidget.GetFile)
+        file_w.setStorageMode(QgsFileWidget.StorageMode.GetFile)
         file_w.setFilter("Couches vecteur (*.shp *.gpkg *.geojson *.kml *.tab *.mif)")
         if preset.get("path"):
             file_w.setFilePath(str(preset.get("path")))
 
         layer_w = QgsMapLayerComboBox()
-        layer_w.setFilters(QgsMapLayerProxyModel.VectorLayer)
+        layer_w.setFilters(QgsMapLayerProxyModel.Filter.VectorLayer)
         layer_w.setAllowEmptyLayer(True)
         # Restore a previously chosen project layer (by id then name).
         ident = preset.get("layer_id", "") or preset.get("token", "")
@@ -1736,7 +1743,7 @@ class FricMapsDialog(QDialog):
         type_cb.setCurrentIndex(0 if str(preset.get("type", "distance")).lower() == "slope" else 1)
         lbl_target = QLabel(tr["lbl_target"])
         target_cb = QComboBox()
-        target_cb.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        target_cb.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         enable_cb = QCheckBox(tr["enable_rule"])
         enable_cb.setChecked(preset.get("enabled", True) is not False)
         btn_del = QToolButton()
@@ -1752,7 +1759,7 @@ class FricMapsDialog(QDialog):
         card.addLayout(ctrl)
 
         table = QTableWidget(0, 3)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         table.verticalHeader().setVisible(False)
         table.setItemDelegate(FloatDelegate(table))
         table.setHorizontalHeaderLabels([tr["col_min"], tr["col_max"], tr["col_weight"]])
@@ -2032,7 +2039,9 @@ class FricMapsDialog(QDialog):
             # Keep the canonical CSV names; the visible labels are translated.
             self._raster_col_keys = list(header)
             self._apply_raster_header_labels()
-            self.table_widget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+            self.table_widget.horizontalHeader().setSectionResizeMode(
+                QHeaderView.ResizeMode.Stretch
+            )
 
             # Set Delegates based on column names
             for col in range(len(header)):
@@ -2157,13 +2166,13 @@ class FricMapsDialog(QDialog):
 
         The visible header is translated, so it must never be used to identify
         a column. The canonical key is stored on the header item under
-        ``Qt.UserRole`` when the table is built; the text is only a fallback
+        ``Qt.ItemDataRole.UserRole`` when the table is built; the text is only a fallback
         for tables created before the header was translated.
         """
         item = self.table_widget.horizontalHeaderItem(col)
         if item is None:
             return ""
-        key = item.data(Qt.UserRole)
+        key = item.data(Qt.ItemDataRole.UserRole)
         return str(key) if key else item.text()
 
     def _raster_col_index(self, key):
@@ -2179,7 +2188,7 @@ class FricMapsDialog(QDialog):
 
         Column names are part of the file format, so they are shown verbatim and
         never translated: a classification table must read identically whatever
-        the interface language. The name is also kept under ``Qt.UserRole`` so
+        the interface language. The name is also kept under ``Qt.ItemDataRole.UserRole`` so
         that column lookups never depend on the displayed text.
         """
         if not hasattr(self, "table_widget"):
@@ -2191,7 +2200,7 @@ class FricMapsDialog(QDialog):
             if item is None:
                 item = QTableWidgetItem()
                 self.table_widget.setHorizontalHeaderItem(col, item)
-            item.setData(Qt.UserRole, key)
+            item.setData(Qt.ItemDataRole.UserRole, key)
             item.setText(key)
 
     def update_compilation_order(self):
@@ -2206,7 +2215,7 @@ class FricMapsDialog(QDialog):
         self._loading_raster = True
         for row in range(self.table_widget.rowCount()):
             item = QTableWidgetItem(str(row + 1))
-            item.setFlags(item.flags() ^ Qt.ItemIsEditable)  # Make read-only
+            item.setFlags(item.flags() ^ Qt.ItemFlag.ItemIsEditable)  # Make read-only
             self.table_widget.setItem(row, col_idx, item)
         self._loading_raster = prev
 
@@ -2316,10 +2325,10 @@ class FricMapsDialog(QDialog):
             filtre_item = self.table_widget.item(row, column)
             current_expr = filtre_item.text() if filtre_item else ""
             dlg = QgsExpressionBuilderDialog(layer, current_expr, self)
-            dlg.setWindowFlags(dlg.windowFlags() | Qt.Tool)
+            dlg.setWindowFlags(dlg.windowFlags() | Qt.WindowType.Tool)
             dlg.expressionBuilder().setExpressionText(current_expr)
 
-            if dlg.exec_():
+            if dlg.exec():
                 new_expr = dlg.expressionBuilder().expressionText()
                 self.table_widget.setItem(row, column, QTableWidgetItem(new_expr))
 
@@ -2432,7 +2441,7 @@ class FricMapsDialog(QDialog):
 
     def cancel_process(self):
         """Cancel the running task."""
-        if hasattr(self, "task") and self.task and self.task.status() == QgsTask.Running:
+        if hasattr(self, "task") and self.task and self.task.status() == QgsTask.TaskStatus.Running:
             self.task.cancel()
             self.log_message(TRANSLATIONS[self.current_lang]["log_fail"] + " (Cancelled)")
             self.btn_cancel.setEnabled(False)
@@ -2595,7 +2604,7 @@ class FricMapsDialog(QDialog):
     def _detect_dark_theme():
         """Return True if the host (QGIS) is using a dark theme."""
         try:
-            win = QApplication.palette().color(QPalette.Window)
+            win = QApplication.palette().color(QPalette.ColorRole.Window)
             # Perceived lightness; < ~128 → dark theme.
             return win.lightness() < 128
         except Exception:
@@ -2687,19 +2696,23 @@ class FricMapsDialog(QDialog):
         # our theme toggle. Without this, switching the plugin to light while
         # QGIS stays dark paints dark glyphs on a light background.
         qpal = QPalette()
-        qpal.setColor(QPalette.Window, QColor(c["window"]))
-        qpal.setColor(QPalette.WindowText, QColor(c["text"]))
-        qpal.setColor(QPalette.Base, QColor(c["surface"]))
-        qpal.setColor(QPalette.AlternateBase, QColor(c["surface_alt"]))
-        qpal.setColor(QPalette.Text, QColor(c["text"]))
-        qpal.setColor(QPalette.Button, QColor(c["surface"]))
-        qpal.setColor(QPalette.ButtonText, QColor(c["text"]))
-        qpal.setColor(QPalette.Highlight, QColor(c["sel_bg"]))
-        qpal.setColor(QPalette.HighlightedText, QColor(c["sel_text"]))
-        qpal.setColor(QPalette.ToolTipBase, QColor(c["surface"]))
-        qpal.setColor(QPalette.ToolTipText, QColor(c["text"]))
-        for _role in (QPalette.Text, QPalette.ButtonText, QPalette.WindowText):
-            qpal.setColor(QPalette.Disabled, _role, QColor(c["disabled_text"]))
+        qpal.setColor(QPalette.ColorRole.Window, QColor(c["window"]))
+        qpal.setColor(QPalette.ColorRole.WindowText, QColor(c["text"]))
+        qpal.setColor(QPalette.ColorRole.Base, QColor(c["surface"]))
+        qpal.setColor(QPalette.ColorRole.AlternateBase, QColor(c["surface_alt"]))
+        qpal.setColor(QPalette.ColorRole.Text, QColor(c["text"]))
+        qpal.setColor(QPalette.ColorRole.Button, QColor(c["surface"]))
+        qpal.setColor(QPalette.ColorRole.ButtonText, QColor(c["text"]))
+        qpal.setColor(QPalette.ColorRole.Highlight, QColor(c["sel_bg"]))
+        qpal.setColor(QPalette.ColorRole.HighlightedText, QColor(c["sel_text"]))
+        qpal.setColor(QPalette.ColorRole.ToolTipBase, QColor(c["surface"]))
+        qpal.setColor(QPalette.ColorRole.ToolTipText, QColor(c["text"]))
+        for _role in (
+            QPalette.ColorRole.Text,
+            QPalette.ColorRole.ButtonText,
+            QPalette.ColorRole.WindowText,
+        ):
+            qpal.setColor(QPalette.ColorGroup.Disabled, _role, QColor(c["disabled_text"]))
         self.setPalette(qpal)
         # The custom-sources pop-up is a separate top-level window, so the
         # palette does not propagate to it automatically.
@@ -2961,7 +2974,7 @@ class FricMapsTask(QgsTask):
     """Task to run the processing algorithm in background."""
 
     def __init__(self, params, log_callback, progress_callback, finished_callback):
-        super().__init__("FricMaps", QgsTask.CanCancel)
+        super().__init__("FricMaps", QgsTask.Flag.CanCancel)
         self.params = params
         self.log_callback = log_callback
         self.progress_callback = progress_callback

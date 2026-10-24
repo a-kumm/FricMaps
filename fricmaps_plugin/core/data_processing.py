@@ -2038,7 +2038,7 @@ def process_fences_and_solar(
             # Check geometry type. If Point/MultiPoint, buffer it to create Polygons.
             # Solar panels are often points in OSM.
             wkb_type = cpv_clip.wkbType()
-            if QgsWkbTypes.geometryType(wkb_type) == QgsWkbTypes.PointGeometry:
+            if QgsWkbTypes.geometryType(wkb_type) == QgsWkbTypes.GeometryType.PointGeometry:
                 print("[F&S] CPV is Point/MultiPoint. Buffering by 5m to create Polygons.")
                 cpv_clip = processing.run(
                     "native:buffer",

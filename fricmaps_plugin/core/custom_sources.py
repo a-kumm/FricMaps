@@ -341,7 +341,7 @@ def process_generic_source(
         # 4) Buffer (mandatory for points to have a raster footprint) ---------
         buffer_m = definition.get("buffer_m", 0.0) or 0.0
         geom_type = QgsWkbTypes.geometryType(layer.wkbType())
-        is_point = geom_type == QgsWkbTypes.PointGeometry
+        is_point = geom_type == QgsWkbTypes.GeometryType.PointGeometry
         if buffer_m > 0:
             try:
                 res = processing.run(

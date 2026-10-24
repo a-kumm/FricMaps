@@ -72,7 +72,7 @@ def normalize_fields(layer, aliases=None):
     # it causes "UNIQUE constraint failed: ...fid" collisions when writing a new
     # GeoPackage. GPKG regenerates its own primary key.
     try:
-        if prov.capabilities() & QgsVectorDataProvider.DeleteAttributes:
+        if prov.capabilities() & QgsVectorDataProvider.Capability.DeleteAttributes:
             fid_idx = [i for i, f in enumerate(layer.fields()) if f.name().lower() == "fid"]
             if fid_idx:
                 prov.deleteAttributes(fid_idx)
@@ -81,7 +81,7 @@ def normalize_fields(layer, aliases=None):
         logging.getLogger(__name__).debug("Suppressed exception", exc_info=True)
         pass
 
-    if not (prov.capabilities() & QgsVectorDataProvider.RenameAttributes):
+    if not (prov.capabilities() & QgsVectorDataProvider.Capability.RenameAttributes):
         return layer
 
     existing = {f.name() for f in layer.fields()}
@@ -352,7 +352,9 @@ def harmonize_fields_for_merge(layers):
             for li, fi, expr, w in text:
                 if w == 0:
                     col = expr or QgsExpression.quotedColumnRef(layers[li].fields()[fi].name())
-                    value, _ = layers[li].aggregate(QgsAggregateCalculator.Max, f"length({col})")
+                    value, _ = layers[li].aggregate(
+                        QgsAggregateCalculator.Aggregate.Max, f"length({col})"
+                    )
                     longest = max(longest, int(value or 0))
             if longest > width:
                 width = 0

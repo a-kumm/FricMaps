@@ -87,7 +87,9 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterVectorLayer(
-                self.EPCI_FILE, "Study Area Layer (EPCI)", types=[QgsProcessing.TypeVectorPolygon]
+                self.EPCI_FILE,
+                "Study Area Layer (EPCI)",
+                types=[QgsProcessing.SourceType.TypeVectorPolygon],
             )
         )
 
@@ -96,7 +98,7 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
                 self.NAME_FIELD,
                 "Name Field",
                 parentLayerParameterName=self.EPCI_FILE,
-                type=QgsProcessingParameterField.String,
+                type=QgsProcessingParameterField.DataType.String,
             )
         )
 
@@ -110,13 +112,17 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterFile(
-                self.BASE_DIR, "Base Data Directory", behavior=QgsProcessingParameterFile.Folder
+                self.BASE_DIR,
+                "Base Data Directory",
+                behavior=QgsProcessingParameterFile.Behavior.Folder,
             )
         )
 
         self.addParameter(
             QgsProcessingParameterFile(
-                self.OUTPUT_DIR, "Output Directory", behavior=QgsProcessingParameterFile.Folder
+                self.OUTPUT_DIR,
+                "Output Directory",
+                behavior=QgsProcessingParameterFile.Behavior.Folder,
             )
         )
 
@@ -124,7 +130,7 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.BUFFER_DIST,
                 "Buffer Distance (m)",
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 defaultValue=5000.0,
                 minValue=0.0,
             )
@@ -134,7 +140,7 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.RESOLUTION,
                 "Resolution (m)",
-                type=QgsProcessingParameterNumber.Double,
+                type=QgsProcessingParameterNumber.Type.Double,
                 defaultValue=5.0,
                 minValue=0.1,
             )
@@ -144,7 +150,7 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterFile(
                 self.TABLE_CSV,
                 "Classification Table (CSV)",
-                behavior=QgsProcessingParameterFile.File,
+                behavior=QgsProcessingParameterFile.Behavior.File,
                 extension="csv",
                 optional=True,
             )
@@ -154,7 +160,7 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.BUILDING_CODE,
                 "Building Class Code",
-                type=QgsProcessingParameterNumber.Integer,
+                type=QgsProcessingParameterNumber.Type.Integer,
                 defaultValue=29,
             )
         )
@@ -256,7 +262,7 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
         def log_callback(msg):
             msg = display_text(msg)
             feedback.pushInfo(msg)
-            QgsMessageLog.logMessage(msg, "FricMaps", Qgis.Info)
+            QgsMessageLog.logMessage(msg, "FricMaps", Qgis.MessageLevel.Info)
 
         try:
             results = run_pipeline(
