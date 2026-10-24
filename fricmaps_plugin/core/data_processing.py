@@ -68,7 +68,9 @@ from .utils import (
     gpkg_sublayers,
     gpkg_sublayers_with_field,
     make_memory_layer,
+    merge_vector_layers,
     normalize_fields,
+    walk_sorted,
     write_vector_layer,
 )
 
@@ -174,7 +176,7 @@ def find_vector_files(
     """
     ext_low = tuple(ext.lower() for ext in extensions)
     matches: List[str] = []
-    for root, _, files in os.walk(base_dir):
+    for root, _, files in walk_sorted(base_dir):
         for fname in files:
             fl = fname.lower()
             path = os.path.join(root, fname)
@@ -333,9 +335,7 @@ def process_land_cover_data(
 
     # Merge all clipped layers
     if len(clipped_layers) > 1:
-        merge_params = {"LAYERS": clipped_layers, "CRS": crs.authid(), "OUTPUT": "memory:"}
-        merge_result = processing.run("native:mergevectorlayers", merge_params)
-        merged_layer: QgsVectorLayer = merge_result["OUTPUT"]
+        merged_layer: QgsVectorLayer = merge_vector_layers(clipped_layers, crs.authid())
     else:
         merged_layer = clipped_layers[0]
 
@@ -357,7 +357,7 @@ def _get_intersecting_dept_codes(
 ) -> set[str]:
     """Helper to find department codes intersecting the extent without merging layers."""
     dept_files = []
-    for root, _, files in os.walk(base_dir):
+    for root, _, files in walk_sorted(base_dir):
         for f in files:
             fl = f.lower()
             path = os.path.join(root, f)
@@ -463,7 +463,7 @@ def process_vegetation_data(
 
     # --- 2) Collecte ZONE_DE_VEGETATION & HAIE* (compatible SHP et sous-couches GPKG)
     vege_files, hedge_files = [], []
-    for root, _, files in os.walk(base_dir):
+    for root, _, files in walk_sorted(base_dir):
         for f in files:
             up = f.upper()
             full = os.path.join(root, f)
@@ -501,10 +501,7 @@ def process_vegetation_data(
 
     veg_merged = None
     if vege_clipped:
-        veg_merged = runp(
-            "native:mergevectorlayers",
-            {"LAYERS": vege_clipped, "CRS": crs_ref.authid(), "OUTPUT": "memory:"},
-        )["OUTPUT"]
+        veg_merged = merge_vector_layers(vege_clipped, crs_ref.authid())
 
         # --- 4) Normaliser NATURE
         if veg_merged.fields().lookupField("NATURE") >= 0:
@@ -605,10 +602,7 @@ def process_vegetation_data(
 
     # --- 7) Merge -> Dissolve -> MultipartToSingleParts (+ ID)
     if hedge_buffers:
-        hedges_merged = runp(
-            "native:mergevectorlayers",
-            {"LAYERS": hedge_buffers, "CRS": crs_ref.authid(), "OUTPUT": "memory:"},
-        )["OUTPUT"]
+        hedges_merged = merge_vector_layers(hedge_buffers, crs_ref.authid())
 
         hedges_diss = runp(
             "native:dissolve", {"INPUT": hedges_merged, "FIELD": [], "OUTPUT": "memory:"}
@@ -686,7 +680,7 @@ def process_rpg_data(
     """
     # Step 1: find region files and determine intersecting region codes
     region_layers: List[QgsVectorLayer] = []
-    for root, _, files in os.walk(base_dir):
+    for root, _, files in walk_sorted(base_dir):
         for fname in files:
             fl = fname.lower()
             path = None
@@ -714,10 +708,7 @@ def process_rpg_data(
                 region_layers.append(lyr)
     if not region_layers:
         raise RuntimeError("No REGION files found for RPG data")
-    merge_regions = processing.run(
-        "native:mergevectorlayers",
-        {"LAYERS": region_layers, "CRS": crs.authid(), "OUTPUT": "memory:"},
-    )["OUTPUT"]
+    merge_regions = merge_vector_layers(region_layers, crs.authid())
     # Determine region code field.
     #   legacy Shapefile model: INSEE_REG
     #   new GeoPackage model (region layer): code_insee
@@ -751,7 +742,7 @@ def process_rpg_data(
     #      the characteristic RPG parcel field) - when the name differs.
     def _rpg_parcel_uris(root_dir):
         by_name, by_field = [], []
-        for root, _, files in os.walk(root_dir):
+        for root, _, files in walk_sorted(root_dir):
             for fname in files:
                 fu = fname.upper()
                 full = os.path.join(root, fname)
@@ -802,10 +793,7 @@ def process_rpg_data(
     if not clipped_layers:
         raise RuntimeError("Failed to process RPG files for the study area")
     # Step 4: merge all clipped polygon layers
-    merged_rpg = processing.run(
-        "native:mergevectorlayers",
-        {"LAYERS": clipped_layers, "CRS": crs.authid(), "OUTPUT": "memory:"},
-    )["OUTPUT"]
+    merged_rpg = merge_vector_layers(clipped_layers, crs.authid())
     # Save output if requested
     if save_outputs:
         out_path = os.path.join(output_dir, f"RPG_{area_name_clean}.gpkg")
@@ -896,10 +884,7 @@ def process_hydrography_network(
     elif len(clipped_surfaces) == 1:
         surfaces = clipped_surfaces[0]
     else:
-        surfaces = processing.run(
-            "native:mergevectorlayers",
-            {"LAYERS": clipped_surfaces, "CRS": crs_ref.authid(), "OUTPUT": "memory:"},
-        )["OUTPUT"]
+        surfaces = merge_vector_layers(clipped_surfaces, crs_ref.authid())
 
     # clean topo
     if surfaces and surfaces.isValid() and surfaces.featureCount() > 0:
@@ -956,10 +941,7 @@ def process_hydrography_network(
     elif len(clipped_sections) == 1:
         sections = clipped_sections[0]
     else:
-        sections = processing.run(
-            "native:mergevectorlayers",
-            {"LAYERS": clipped_sections, "CRS": crs_ref.authid(), "OUTPUT": "memory:"},
-        )["OUTPUT"]
+        sections = merge_vector_layers(clipped_sections, crs_ref.authid())
 
     # --- 4) Buffer 2.5 m (this is what creates the overshoot)
     if sections and sections.isValid() and sections.featureCount() > 0:
@@ -1007,10 +989,7 @@ def process_hydrography_network(
             interm_clean = processing.run(
                 "native:difference", {"INPUT": interm, "OVERLAY": perm, "OUTPUT": "memory:"}
             )["OUTPUT"]
-            sections_clean = processing.run(
-                "native:mergevectorlayers",
-                {"LAYERS": [perm, interm_clean], "CRS": crs_ref, "OUTPUT": "memory:"},
-            )["OUTPUT"]
+            sections_clean = merge_vector_layers([perm, interm_clean], crs_ref)
         else:
             sections_clean = sections_buf
     else:
@@ -1085,10 +1064,7 @@ def process_hydrography_network(
     surf_view = _retain_fields(surfaces_with_width, common) if common else surfaces_with_width
     sect_view = _retain_fields(sections_no_surface, common) if common else sections_no_surface
 
-    hydro_merged = processing.run(
-        "native:mergevectorlayers",
-        {"LAYERS": [surf_view, sect_view], "CRS": crs_ref, "OUTPUT": "memory:"},
-    )["OUTPUT"]
+    hydro_merged = merge_vector_layers([surf_view, sect_view], crs_ref)
 
     # --- 9) FINAL CLIP (removes buffer overshoot)
     # Re-clip whatever overshoots (caused by the 2.5 m end buffers)
@@ -1265,10 +1241,7 @@ def process_technical_infrastructure(
         if len(parts) == 1:
             merged_layers.append(parts[0])
         else:
-            res = processing.run(
-                "native:mergevectorlayers", {"LAYERS": parts, "CRS": crs_ref, "OUTPUT": "memory:"}
-            )
-            merged_layers.append(res["OUTPUT"])
+            merged_layers.append(merge_vector_layers(parts, crs_ref))
 
     if not merged_layers:
         # Nothing found -> return an empty layer (polygon by default)
@@ -1277,11 +1250,7 @@ def process_technical_infrastructure(
     if len(merged_layers) == 1:
         final_layer = merged_layers[0]
     else:
-        res = processing.run(
-            "native:mergevectorlayers",
-            {"LAYERS": merged_layers, "CRS": crs_ref, "OUTPUT": "memory:"},
-        )
-        final_layer = res["OUTPUT"]
+        final_layer = merge_vector_layers(merged_layers, crs_ref)
 
     # Export
     if save_outputs and final_layer and final_layer.isValid() and final_layer.featureCount() > 0:
@@ -1476,10 +1445,7 @@ def process_linear_transport_infrastructure(
             return None
         if len(clipped) == 1:
             return clipped[0]
-        return processing.run(
-            "native:mergevectorlayers",
-            {"LAYERS": clipped, "CRS": crs.authid(), "OUTPUT": "memory:"},
-        )["OUTPUT"]
+        return merge_vector_layers(clipped, crs.authid())
 
     def _ensure_field(layer: QgsVectorLayer, name: str, qtype=QVariant.Int):
         if layer.fields().indexFromName(name) < 0:
@@ -1657,7 +1623,7 @@ def process_linear_transport_infrastructure(
 
     # ---------- 2) Collecte ROUTES / RAILS (SHP fichiers OU sous-couches GPKG) ----------
     roads_files, rails_files = [], []
-    for root, _, files in os.walk(base_dir):
+    for root, _, files in walk_sorted(base_dir):
         for f in files:
             full = os.path.join(root, f)
             up = f.upper()
@@ -1936,14 +1902,7 @@ def process_linear_transport_infrastructure(
     if not parts:
         return make_memory_layer("Polygon", crs_ref, QgsFields(), f"ILT_{area_name_clean}_empty")
 
-    ilt = (
-        parts[0]
-        if len(parts) == 1
-        else processing.run(
-            "native:mergevectorlayers",
-            {"LAYERS": parts, "CRS": crs_ref.authid(), "OUTPUT": "memory:"},
-        )["OUTPUT"]
-    )
+    ilt = parts[0] if len(parts) == 1 else merge_vector_layers(parts, crs_ref.authid())
 
     if save_outputs and ilt and ilt.isValid() and ilt.featureCount() > 0:
         write_vector_layer(ilt, os.path.join(debug_dir, "LTI_Hierarchised_Debug.gpkg"))
@@ -1977,7 +1936,7 @@ def process_fences_and_solar(
 
     # -- helpers locaux --
     def _find_path(base_dir: str, exact_name: str) -> Optional[str]:
-        for root, _, files in os.walk(base_dir):
+        for root, _, files in walk_sorted(base_dir):
             for f in files:
                 if f == exact_name:
                     return os.path.join(root, f)
@@ -2051,9 +2010,7 @@ def process_fences_and_solar(
             return empty
         if len(layers) == 1:
             return layers[0]
-        return processing.run(
-            "native:mergevectorlayers", {"LAYERS": layers, "CRS": crs.authid(), "OUTPUT": "memory:"}
-        )["OUTPUT"]
+        return merge_vector_layers(layers, crs.authid())
 
     # -- logs doux --
     print("\n=== Fences/Solar: processing start ===")
@@ -2199,10 +2156,7 @@ def process_dense_built_areas(
             return None
         if len(layers) == 1:
             return layers[0]
-        return processing.run(
-            "native:mergevectorlayers",
-            {"LAYERS": layers, "CRS": crs_ref.authid(), "OUTPUT": "memory:"},
-        )["OUTPUT"]
+        return merge_vector_layers(layers, crs_ref.authid())
 
     def _empty():
         fields = QgsFields()
@@ -2222,7 +2176,7 @@ def process_dense_built_areas(
 
     # ================= 2) ZONE_CONSTRUITE =================
     zone_files = []
-    for root, _, files in os.walk(base_dir):
+    for root, _, files in walk_sorted(base_dir):
         for f in files:
             if "ZONE_CONSTRUITE" in f.upper():
                 full = os.path.join(root, f)
@@ -2258,7 +2212,7 @@ def process_dense_built_areas(
 
     # ================= 3) BATIMENT =================
     bat_files = []
-    for root, _, files in os.walk(base_dir):
+    for root, _, files in walk_sorted(base_dir):
         for f in files:
             fl = f.lower()
             full = os.path.join(root, f)

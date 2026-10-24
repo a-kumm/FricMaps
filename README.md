@@ -167,7 +167,7 @@ The output directory holds only the deliverables, with `<area>` the cleaned stud
 | `Scenario_No_LTI_<area>.tif` | Scenario without linear transport infrastructure |
 | `Scenario_No_Barriers_<area>.tif` | Scenario without either |
 
-Everything else — the clipped vector layers, the digital elevation model, the per-step weighting rasters and the scratch folders — is written to an `intermediate/` sub-folder. Nothing is discarded, so a run remains fully auditable, but the deliverables stay easy to find.
+Everything else — the clipped vector layers, the digital elevation model, the per-step weighting rasters, the scratch folders and `Performance_<area>.json`, the report of timings, memory and environment of the run — is written to an `intermediate/` sub-folder. Nothing is discarded, so a run remains fully auditable, but the deliverables stay easy to find.
 
 Output filenames are in English regardless of the interface language, so that scripts, figures and published protocols remain valid across locales.
 
@@ -197,6 +197,7 @@ pyproject.toml       formatting and linting configuration
 - [`docs/GENERIC_SOURCES_ARCHITECTURE.md`](docs/GENERIC_SOURCES_ARCHITECTURE.md) — design of the data-driven custom-source system
 - [`docs/GENERIC_SOURCES_IMPLEMENTATION.md`](docs/GENERIC_SOURCES_IMPLEMENTATION.md) — delivered behaviour and a worked example
 - [`docs/SCRIPTING.md`](docs/SCRIPTING.md) — running the whole workflow from a script
+- [`docs/BENCHMARKING.md`](docs/BENCHMARKING.md) — performance report, repeatable benchmark and output comparison
 - [`CHANGELOG.md`](CHANGELOG.md) — release history
 
 ## Citation

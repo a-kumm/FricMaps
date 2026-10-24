@@ -33,4 +33,5 @@ __all__ = [
     "utils_check",
     "custom_sources",
     "full_pipeline",
+    "perf",
 ]

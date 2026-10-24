@@ -25,6 +25,7 @@ from qgis.core import (
     QgsProcessingParameterField,
     QgsProcessingParameterNumber,
     QgsProcessingParameterBoolean,
+    QgsProcessingOutputFile,
     QgsProcessingOutputFolder,
     QgsProcessingOutputRasterLayer,
     QgsProcessingException,
@@ -33,6 +34,7 @@ from qgis.core import (
     QgsApplication,
 )
 from .core.full_pipeline import run_pipeline
+from .core.utils import display_text
 
 
 class FricMapsAlgorithm(QgsProcessingAlgorithm):
@@ -69,6 +71,7 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
     OUTPUT_SCENARIO_NO_FENCES = "OUTPUT_SCENARIO_NO_FENCES"
     OUTPUT_SCENARIO_NO_LTI = "OUTPUT_SCENARIO_NO_LTI"
     OUTPUT_SCENARIO_NO_BARRIERS = "OUTPUT_SCENARIO_NO_BARRIERS"
+    OUTPUT_PERFORMANCE = "OUTPUT_PERFORMANCE"
 
     #: Maps a run_pipeline() result key onto the algorithm output it feeds.
     _RESULT_TO_OUTPUT = {
@@ -78,6 +81,7 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
         "scenario_no_fences": OUTPUT_SCENARIO_NO_FENCES,
         "scenario_no_lti": OUTPUT_SCENARIO_NO_LTI,
         "scenario_no_barriers": OUTPUT_SCENARIO_NO_BARRIERS,
+        "performance_report": OUTPUT_PERFORMANCE,
     }
 
     def initAlgorithm(self, config=None):
@@ -216,6 +220,9 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
             (self.OUTPUT_SCENARIO_NO_BARRIERS, "Scenario: no barriers"),
         ):
             self.addOutput(QgsProcessingOutputRasterLayer(key, label))
+        self.addOutput(
+            QgsProcessingOutputFile(self.OUTPUT_PERFORMANCE, "Performance report (JSON)")
+        )
 
     def processAlgorithm(self, parameters, context, feedback):
         epci_layer = self.parameterAsVectorLayer(parameters, self.EPCI_FILE, context)
@@ -247,6 +254,7 @@ class FricMapsAlgorithm(QgsProcessingAlgorithm):
             feedback.setProgressText(msg)
 
         def log_callback(msg):
+            msg = display_text(msg)
             feedback.pushInfo(msg)
             QgsMessageLog.logMessage(msg, "FricMaps", Qgis.Info)
 

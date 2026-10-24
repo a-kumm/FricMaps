@@ -31,6 +31,8 @@ from qgis.core import (
     Qgis,
 )
 
+from .utils import walk_sorted
+
 
 def _gpkg_layers_matching(gpkg_path, name_patterns):
     """Return the layer names inside a GeoPackage whose name contains one of the
@@ -114,7 +116,7 @@ def check_required_datasets(
         #    b) SUBLAYERS inside GeoPackages (BD TOPO GPKG case: the
         #       'departement'/'region' layers live INSIDE the .gpkg, so no file
         #       carries that name).
-        for root, _, files in os.walk(base_dir):
+        for root, _, files in walk_sorted(base_dir):
             for file in files:
                 fu = file.upper()
                 path = os.path.join(root, file)
@@ -219,7 +221,7 @@ def check_required_datasets(
 
         # Collect every directory that "looks like" the dataset
         candidate_paths = []
-        for root, dirs, _ in os.walk(base_dir):
+        for root, dirs, _ in walk_sorted(base_dir):
             for d in dirs:
                 d_upper = d.upper().replace(" ", "").replace("_", "").replace("-", "")
                 if norm_data_type in d_upper:

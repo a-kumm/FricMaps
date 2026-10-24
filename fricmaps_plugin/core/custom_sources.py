@@ -71,6 +71,7 @@ from .utils import (
     create_extent_layer,
     clip_layer,
     clean_name,
+    walk_sorted,
 )
 
 # Default vector extensions scanned when detecting a source by token.
@@ -231,7 +232,7 @@ def _resolve_source_paths(definition: Dict[str, Any], base_dir: str, log) -> Lis
             return [p]
         if os.path.isdir(p):
             found = []
-            for root, _, files in os.walk(p):
+            for root, _, files in walk_sorted(p):
                 for f in files:
                     if f.lower().endswith(exts):
                         found.append(os.path.join(root, f))

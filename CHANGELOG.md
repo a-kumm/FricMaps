@@ -4,7 +4,51 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [1.0.0] - Unreleased
+## [1.2.0] - 2026-10-24
+
+### Added
+- Performance report: every run writes `intermediate/Performance_<area>.json` with
+  per-stage timings, memory (RSS), workload descriptors (grid size, valid pixels,
+  features per source) and the software and hardware environment. It is also
+  returned as the `OUTPUT_PERFORMANCE` output of the Processing algorithm, and is
+  written even when the run fails.
+- `tools/benchmark.py` (repeated headless runs with aggregation: median, spread,
+  peak memory, LaTeX table) and `tools/compare_rasters.py` (pixel-wise comparison
+  of two sets of outputs); see `docs/BENCHMARKING.md`.
+- Unit tests under `tests/` (`python -m unittest discover -s tests`).
+
+### Fixed
+- Results no longer depend on the operating system when the BD TOPO departments
+  of a study area mix Shapefile and GeoPackage deliveries. The same attribute is
+  defined differently in the two formats (`SALINITE`, `FICTIF`: 3-character text
+  in a Shapefile, boolean in a GeoPackage), and merging the layers failed or
+  succeeded depending on their order, which came from the file system: with the
+  same data, hydrography and linear transport infrastructure were lost on macOS
+  and kept on Linux. Fields are now given compatible definitions before every
+  merge (booleans become `Oui`/`Non`), and input files are found in sorted order.
+- Classes were silently dropped when a layer could not be written to disk for
+  rasterisation: a `fid` attribute inherited from a GeoPackage source collided
+  with the keys of features from other sources ("UNIQUE constraint failed:
+  ...fid", error 7). With mixed BD TOPO deliveries this removed the hydrography
+  classes on Linux. The attribute is no longer written.
+- A class that cannot be rasterised (layer not written, mask not produced or not
+  readable) now stops the run with an explicit message instead of being left out
+  of a land-cover raster reported as complete.
+- Rasterisation no longer needs temporary space proportional to the number of
+  classes. The per-class masks are written as bytes (they were Float32, four
+  times larger) and deleted as soon as they have been read: a 124 M-pixel grid
+  previously needed about 20 GB of temporary files and could fill a RAM-backed
+  `/tmp`.
+- On macOS, the log of the plugin window showed an empty box instead of most
+  lines. Qt 5 on macOS cannot draw a symbol followed by the emoji variation
+  selector (U+FE0F, as in the `ℹ️` that prefixes every pipeline message) and drops
+  the rest of the line; the selector is now removed from the text shown on macOS.
+  Other platforms are unchanged.
+- An optional source that fails is still skipped so that the run can finish, but
+  it is now listed in the performance report (`workload.failed_sources`) and in a
+  summary line of the log, instead of only in a warning among the messages.
+
+## [1.0.0] - 2026-07-22
 
 ### Licensing
 - Source code released under GPL-3.0-or-later, as required for a QGIS

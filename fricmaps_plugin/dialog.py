@@ -74,6 +74,7 @@ import processing
 
 from . import PLUGIN_ROOT
 from .core.table_schema import canonical_header
+from .core.utils import display_text
 
 # --- Translations ---
 TRANSLATIONS = {
@@ -1712,7 +1713,7 @@ class FricMapsDialog(QDialog):
     def _update_weight_card_header(self, rec):
         tr = TRANSLATIONS[self.current_lang]
         if rec["type_cb"].currentIndex() == 0:
-            title = "⛰️  " + tr["wtype_slope"]
+            title = display_text("⛰️  ") + tr["wtype_slope"]
         else:
             title = "🎯  " + tr["wtype_distance"] + " · " + (rec["target_cb"].currentText() or "—")
         if not rec["enable_cb"].isChecked():
@@ -1984,7 +1985,7 @@ class FricMapsDialog(QDialog):
             self.log_message(f"⚠️ Error loading area names: {e}")  # Removed level=Qgis.Warning
 
     def log_message(self, message):
-        self.log_text.append(message)
+        self.log_text.append(display_text(message))
         # Auto-scroll
         sb = self.log_text.verticalScrollBar()
         sb.setValue(sb.maximum())
@@ -2678,7 +2679,7 @@ class FricMapsDialog(QDialog):
         c = self._theme_palette()
 
         # Theme toggle button glyph (shows the theme you can switch TO).
-        self.btn_theme.setText("☀️" if self.dark_mode else "🌙")
+        self.btn_theme.setText(display_text("☀️") if self.dark_mode else "🌙")
 
         # Apply a real QPalette, not just a stylesheet. Sub-controls left to the
         # native style - the checkbox tick and the radio dot - are painted from

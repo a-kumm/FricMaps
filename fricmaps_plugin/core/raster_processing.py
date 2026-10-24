@@ -47,6 +47,7 @@ from qgis.core import (
 import processing
 
 from .table_schema import canonical_header
+from .utils import walk_sorted
 from qgis.core import QgsProcessingFeedback
 from osgeo import gdal
 
@@ -62,6 +63,15 @@ LINE_BUFFER_FACTOR = 0.75
 # =====================================================================
 # 0) SQL FILTER CLEANING / NORMALISATION
 # =====================================================================
+
+
+def _remove_quietly(path: str) -> None:
+    """Delete a temporary raster and its ``.aux.xml`` sidecar; never raises."""
+    for candidate in (path, path + ".aux.xml"):
+        try:
+            os.remove(candidate)
+        except OSError:
+            pass
 
 
 def apply_SQL_filter(filter_str: str) -> str:
@@ -254,6 +264,13 @@ def _ensure_vector_on_disk(layer: QgsVectorLayer, tmp_dir: str, suffix: str = ""
     options.driverName = "GPKG"
     options.fileEncoding = "UTF-8"
     options.layerName = safe_name
+    # A 'fid' attribute inherited from a GeoPackage source becomes the primary key of the
+    # new GeoPackage. Merged with sources that have none, its values collide with the keys
+    # assigned to the others ("UNIQUE constraint failed: ...fid", error 7), depending on
+    # the order of the features. Leave it out: the GeoPackage numbers features itself.
+    keep = [i for i, f in enumerate(layer.fields()) if f.name().lower() != "fid"]
+    if len(keep) != len(layer.fields()):
+        options.attributes = keep
 
     result = QgsVectorFileWriter.writeAsVectorFormatV3(
         layer, out_path, layer.transformContext(), options
@@ -484,14 +501,16 @@ def rasterize_classes_and_friction(
         except Exception as e:
             log(f"⚠️ Continuity buffer skipped for {source_name}: {e}")
 
-        # Ensure the filtered layer is available on disk
+        # Ensure the filtered layer is available on disk. As for the masks below, failing
+        # here is an error, not a missing class.
         try:
             vector_path = _ensure_vector_on_disk(
                 layer_to_raster, tmp_vlayers_dir, suffix=source_name
             )
         except Exception as e:
-            log(f"❌ Unable to stage layer '{source_name}' on disk -> {e}")
-            continue
+            raise RuntimeError(
+                f"Unable to stage layer '{source_name}' (class {class_val}) on disk: {e}"
+            ) from e
 
         # gdal:rasterize parameters
         # NOTE: UNITS=0 -> WIDTH/HEIGHT are pixel counts (cols/rows)
@@ -505,7 +524,9 @@ def rasterize_classes_and_friction(
             "EXTENT": f"{rect.xMinimum()},{rect.xMaximum()},{rect.yMinimum()},{rect.yMaximum()}",
             "NODATA": 0,
             "OPTIONS": "",
-            "DATA_TYPE": 5,  # UInt16
+            # 0 = Byte. The mask only holds 0 and 1. (5 is Float32 in the QGIS enum: the
+            # masks were 4x larger than needed, and one is written per class.)
+            "DATA_TYPE": 0,
             "INIT": 0,
             "INVERT": False,
             "EXTRA": "-at",  # ALL_TOUCHED: burn every touched pixel -> no gaps
@@ -513,43 +534,52 @@ def rasterize_classes_and_friction(
         }
         # No WHERE clause: the layer is already filtered
 
+        # A mask that cannot be produced or read is an error, not a missing class: carrying
+        # on would deliver a land-cover raster with classes silently absent.
         try:
             res = processing.run("gdal:rasterize", params, feedback=feedback)
         except Exception as e:
-            log(f"❌ gdal:rasterize failed for {source_name} [{filter_expr}] -> {e}")
-            continue
+            raise RuntimeError(
+                f"Rasterisation failed for {source_name} (class {class_val}) "
+                f"[{filter_expr}]: {e}"
+            ) from e
 
         mask_path = res.get("OUTPUT")
         if not mask_path or not os.path.exists(mask_path):
-            log(f"❌ Raster mask not created for {source_name}")
-            continue
+            raise RuntimeError(f"Raster mask not created for {source_name} (class {class_val})")
 
-        # Read the raster mask with GDAL
+        # Read the mask, then delete it at once. There is one mask per class and QGIS only
+        # removes its temporary files when the session ends, so keeping them all would
+        # need (number of classes) x (grid size) of temporary space.
+        ds = None
         try:
             ds = gdal.Open(mask_path)
             if ds is None:
-                log(f"❌ Unable to open the raster mask for {source_name}")
-                continue
-
-            band = ds.GetRasterBand(1)
-            mask_np = band.ReadAsArray().astype(np.uint16)
-
-            if mask_np.shape != (rows, cols):
-                log(f"⚠️ Mismatch mask={mask_np.shape} attendu=({rows}, {cols}) → cropping")
-                min_rows = min(rows, mask_np.shape[0])
-                min_cols = min(cols, mask_np.shape[1])
-                mask_np = mask_np[:min_rows, :min_cols]
-                raster_classes = raster_classes[:min_rows, :min_cols]
-                raster_permeability = raster_permeability[:min_rows, :min_cols]
-                rows, cols = min_rows, min_cols
-
+                raise RuntimeError("the file cannot be opened")
+            mask_np = ds.GetRasterBand(1).ReadAsArray()
         except Exception as e:
-            log(f"❌ GDAL error while reading the raster mask for {source_name} -> {e}")
-            continue
+            raise RuntimeError(
+                f"Cannot read the raster mask of {source_name} (class {class_val}): {e}. "
+                f"This is usually a full temporary folder ({os.path.dirname(mask_path)}): "
+                "point TMPDIR (Linux/macOS) or TEMP (Windows) to a disk with free space."
+            ) from e
+        finally:
+            ds = None  # close the dataset before deleting the file
+            _remove_quietly(mask_path)
+
+        if mask_np.shape != (rows, cols):
+            log(f"⚠️ Mismatch mask={mask_np.shape} attendu=({rows}, {cols}) → cropping")
+            min_rows = min(rows, mask_np.shape[0])
+            min_cols = min(cols, mask_np.shape[1])
+            mask_np = mask_np[:min_rows, :min_cols]
+            raster_classes = raster_classes[:min_rows, :min_cols]
+            raster_permeability = raster_permeability[:min_rows, :min_cols]
+            rows, cols = min_rows, min_cols
 
         # Application classe / friction
-        raster_classes[mask_np == 1] = class_val
-        raster_permeability[mask_np == 1] = friction_val
+        burned = mask_np == 1
+        raster_classes[burned] = class_val
+        raster_permeability[burned] = friction_val
         classes_rasterized.add(class_val)
 
         log(f"🔢 Add : CLASSE {class_val} | permeability {friction_val} | objects : {count_obj}\n")
@@ -644,7 +674,7 @@ def process_dtm_from_tiles(geom_extent, crs_ref, base_dir, output_mnt_path, reso
     from .utils import gpkg_sublayers
 
     dep_files = []
-    for root, _, files in os.walk(base_dir):
+    for root, _, files in walk_sorted(base_dir):
         for file in files:
             fl = file.lower()
             full = os.path.join(root, file)

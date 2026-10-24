@@ -58,6 +58,7 @@ rebuild filenames:
 | `OUTPUT_SCENARIO_NO_FENCES` | Scenario without fences |
 | `OUTPUT_SCENARIO_NO_LTI` | Scenario without linear transport infrastructure |
 | `OUTPUT_SCENARIO_NO_BARRIERS` | Scenario without either |
+| `OUTPUT_PERFORMANCE` | JSON report of timings, memory and environment (see [`BENCHMARKING.md`](BENCHMARKING.md)) |
 
 A vector-only run (`ONLY_VECTORS: True`) produces no raster, so those keys are
 simply absent from the result.

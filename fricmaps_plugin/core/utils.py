@@ -19,14 +19,18 @@ import logging
 import os
 import re
 import sqlite3
+import sys
 import unicodedata
 from qgis.core import (
+    QgsAggregateCalculator,
+    QgsExpression,
     QgsVectorLayer,
     QgsVectorFileWriter,
     QgsFeature,
     QgsFields,
     QgsVectorDataProvider,
 )
+from qgis.PyQt.QtCore import QVariant
 import processing
 
 # BD TOPO "new data model" (GeoPackage) -> "legacy model" (Shapefile, upper
@@ -180,6 +184,17 @@ def make_memory_layer(geom_str, crs, fields=None, name="memory"):
     return layer
 
 
+def display_text(text):
+    """Text as Qt can draw it on this platform.
+
+    On macOS, Qt 5 cannot draw a symbol followed by the emoji variation selector
+    (U+FE0F, as in the "⚠️" and "ℹ️" of the log messages): it draws an empty box and
+    drops the rest of the line. Without the selector the symbol is drawn in its text
+    form. Other platforms get the text unchanged.
+    """
+    return text.replace("️", "") if sys.platform == "darwin" else text
+
+
 def write_vector_layer(layer, path):
     """Write a vector layer to disk.
 
@@ -211,7 +226,7 @@ def find_files_fuzzy(base_dir, token, exts=(".shp", ".gpkg")):
     token_up = token.upper()
     ext_up = tuple(e.upper() for e in exts)
     out = []
-    for root, _, files in os.walk(base_dir):
+    for root, _, files in walk_sorted(base_dir):
         for f in files:
             fu = f.upper()
             path = os.path.join(root, f)
@@ -245,10 +260,156 @@ def merge_vector_layers_from_paths(paths, crs):
     if len(layers) == 1:
         return normalize_fields(layers[0])
 
-    merged = processing.run(
-        "native:mergevectorlayers", {"LAYERS": layers, "CRS": crs.authid(), "OUTPUT": "memory:"}
+    return normalize_fields(merge_vector_layers(layers, crs.authid()))
+
+
+# =====================================================================
+# Deterministic discovery and merging of mixed Shapefile / GeoPackage deliveries
+# =====================================================================
+
+
+def walk_sorted(base_dir):
+    """``os.walk`` in sorted order.
+
+    ``os.walk`` lists entries in file-system order, which differs between ext4, APFS
+    and NTFS. The order in which input layers are found is the order in which they are
+    merged, so it must not depend on the machine.
+    """
+    for root, dirs, files in os.walk(base_dir):
+        dirs.sort()  # in place: os.walk descends in this order
+        yield root, dirs, sorted(files)
+
+
+_NUMERIC_TYPES = {
+    QVariant.Int,
+    QVariant.UInt,
+    QVariant.LongLong,
+    QVariant.ULongLong,
+    QVariant.Double,
+}
+
+
+def harmonize_fields_for_merge(layers):
+    """Give same-named fields compatible definitions before ``native:mergevectorlayers``.
+
+    BD TOPO is delivered per department, as Shapefile or GeoPackage, and a study area
+    across a department boundary can mix both. The same attribute is then defined
+    differently: ``FICTIF`` or ``SALINITE`` is 3-character text (``Oui``/``Non``) in a
+    Shapefile and a boolean in a GeoPackage, and text has a fixed width in a Shapefile
+    but none (length 0) in a GeoPackage. ``native:mergevectorlayers`` turns a type
+    conflict into text of unlimited length, but the next fixed-width layer narrows it
+    again, so the merge fails or succeeds depending on the order of the layers
+    ("String of length 5 exceeds maximum field length (3)").
+
+    Fields are matched case-insensitively, as the merge does. For each conflict:
+
+    - a boolean becomes ``Oui``/``Non`` text, the Shapefile values the filters of this
+      plugin test (``upper("FICTIF") <> 'OUI'``);
+    - numbers of different types become the widest type;
+    - any other type conflict becomes text;
+    - text of unlimited length mixed with fixed-width text takes the largest width if
+      every value fits in it, otherwise every layer gets unlimited length.
+
+    Only the layers with a field to change are rewritten (``native:refactorfields``);
+    the others are returned as they are.
+    """
+    layers = [
+        lyr if isinstance(lyr, QgsVectorLayer) else QgsVectorLayer(str(lyr), "merge_input", "ogr")
+        for lyr in layers
+    ]
+    groups = {}
+    for li, lyr in enumerate(layers):
+        for fi, field in enumerate(lyr.fields()):
+            groups.setdefault(field.name().upper(), []).append((li, fi, field))
+
+    changes = {}  # (layer index, field index) -> (type, length, precision, expression)
+    for members in groups.values():
+        if len({(f.type(), f.length(), f.precision()) for _, _, f in members}) < 2:
+            continue
+        types = {f.type() for _, _, f in members}
+        if len(types) == 1 and QVariant.String not in types:
+            continue  # same non-text type: only width or precision differ, merged as is
+        if types <= _NUMERIC_TYPES:
+            widest = QVariant.Double if QVariant.Double in types else QVariant.LongLong
+            for li, fi, f in members:
+                if f.type() != widest:
+                    changes[(li, fi)] = (widest, 0, 0, QgsExpression.quotedColumnRef(f.name()))
+            continue
+
+        text = []  # (layer index, field index, expression or None if already text, width)
+        for li, fi, f in members:
+            col = QgsExpression.quotedColumnRef(f.name())
+            if f.type() == QVariant.String:
+                text.append((li, fi, None, f.length()))
+            elif f.type() == QVariant.Bool:
+                expr = f"CASE WHEN {col} IS NULL THEN NULL WHEN {col} THEN 'Oui' ELSE 'Non' END"
+                text.append((li, fi, expr, 3))
+            else:
+                text.append((li, fi, f"to_string({col})", 0))
+        width = max(w for *_, w in text)
+        if any(w == 0 for *_, w in text):
+            longest = 0
+            for li, fi, expr, w in text:
+                if w == 0:
+                    col = expr or QgsExpression.quotedColumnRef(layers[li].fields()[fi].name())
+                    value, _ = layers[li].aggregate(QgsAggregateCalculator.Max, f"length({col})")
+                    longest = max(longest, int(value or 0))
+            if longest > width:
+                width = 0
+        for li, fi, expr, w in text:
+            if expr is not None or (w == 0) != (width == 0):
+                col = expr or QgsExpression.quotedColumnRef(layers[li].fields()[fi].name())
+                changes[(li, fi)] = (QVariant.String, width, 0, col)
+
+    harmonized = []
+    for li, lyr in enumerate(layers):
+        if not any(key[0] == li for key in changes):
+            harmonized.append(lyr)
+            continue
+        mapping = []
+        for fi, f in enumerate(lyr.fields()):
+            if (li, fi) in changes:
+                ftype, length, precision, expr = changes[(li, fi)]
+                mapping.append(
+                    {
+                        "name": f.name(),
+                        "type": ftype,
+                        "length": length,
+                        "precision": precision,
+                        "expression": expr,
+                    }
+                )
+            else:
+                mapping.append(
+                    {
+                        "name": f.name(),
+                        "type": f.type(),
+                        "sub_type": f.subType(),
+                        "type_name": f.typeName(),
+                        "length": f.length(),
+                        "precision": f.precision(),
+                        "expression": QgsExpression.quotedColumnRef(f.name()),
+                    }
+                )
+        harmonized.append(
+            processing.run(
+                "native:refactorfields",
+                {"INPUT": lyr, "FIELDS_MAPPING": mapping, "OUTPUT": "memory:"},
+            )["OUTPUT"]
+        )
+    return harmonized
+
+
+def merge_vector_layers(layers, crs):
+    """``native:mergevectorlayers`` into memory, on layers made compatible first.
+
+    Use this instead of calling the algorithm directly whenever the layers may come
+    from different deliveries (see :func:`harmonize_fields_for_merge`).
+    """
+    return processing.run(
+        "native:mergevectorlayers",
+        {"LAYERS": harmonize_fields_for_merge(layers), "CRS": crs, "OUTPUT": "memory:"},
     )["OUTPUT"]
-    return normalize_fields(merged)
 
 
 def clip_layer(input_layer, overlay_layer):

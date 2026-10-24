@@ -24,11 +24,14 @@ scenarios) using native QGIS algorithms and GDAL.
 
 from __future__ import annotations
 
+import functools
+import inspect
 import os
-from typing import Dict, Optional, Callable
+from typing import Any, Dict, Optional, Callable
 
 from qgis.core import QgsVectorLayer
 
+from . import perf
 from .utils import clean_name
 from .data_processing import (
     extract_area_extent,
@@ -55,7 +58,139 @@ from .raster_processing import (
     replace_class3_1000_by_local_mode,
 )
 
+#: Parameters copied into the performance report: they drive the amount of work.
+_REPORTED_PARAMETERS = (
+    "area_name",
+    "buffer_dist",
+    "resolution",
+    "save_vector_outputs",
+    "only_vectors",
+    "skip_vectors",
+    "verify_data",
+    "num_workers",
+)
 
+#: Classes whose pixel counts are reported: the barriers targeted by the scenarios.
+_SCENARIO_CLASS_CODES = (35, 36, 37, 38, 39, 40)
+
+
+def _json_list_length(value: Any) -> Optional[int]:
+    import json
+
+    try:
+        data = json.loads(value) if value else []
+    except (TypeError, ValueError):
+        return None
+    return len(data) if isinstance(data, list) else None
+
+
+def _extent_workload(extent_geom: Any, resolution: float) -> Dict[str, Any]:
+    """Size of the grid the run will produce, mirroring ``_compute_grid_from_geom``."""
+    box = extent_geom.boundingBox()
+    cols = int(box.width() / resolution)
+    rows = int(box.height() / resolution)
+    return {
+        "resolution": resolution,
+        "grid_rows": rows,
+        "grid_cols": cols,
+        "grid_pixels": rows * cols,
+        "grid_area_km2": round(box.width() * box.height() / 1e6, 3),
+        "processing_area_km2": round(extent_geom.area() / 1e6, 3),
+    }
+
+
+def _count_classes(path: str, codes: Any) -> Dict[str, Any]:
+    """Pixel counts of the land-cover raster, read in strips so that memory stays bounded.
+
+    Class 0 is "no class": NoData, i.e. the part of the grid (the bounding box of the
+    buffered study area) that lies outside the study area or has no land-cover feature.
+    """
+    import numpy as np
+    from osgeo import gdal
+
+    ds = gdal.Open(path)
+    if ds is None:
+        return {}
+    band = ds.GetRasterBand(1)
+    counts = np.zeros(65536, dtype=np.int64)
+    step = 1024
+    for y in range(0, ds.RasterYSize, step):
+        strip = band.ReadAsArray(0, y, ds.RasterXSize, min(step, ds.RasterYSize - y))
+        counts += np.bincount(strip.ravel(), minlength=65536)[:65536]
+    total = ds.RasterXSize * ds.RasterYSize
+    ds = None
+    nodata = int(counts[0])
+    return {
+        "valid_pixels": total - nodata,
+        "nodata_pixels": nodata,
+        "class_pixels": {str(code): int(counts[code]) for code in codes},
+    }
+
+
+def _write_performance_report(
+    recorder: perf.PerfRecorder, params: Dict[str, Any], result: Optional[Dict[str, str]] = None
+) -> Optional[str]:
+    """Write ``intermediate/Performance_<area>.json`` and log its summary. Never raises."""
+    try:
+        work_dir = os.path.join(params["output_dir"], "intermediate")
+        if not os.path.isdir(work_dir):
+            return None  # the run stopped before producing anything
+        classes_path = (result or {}).get("classes_raster")
+        if classes_path and os.path.isfile(classes_path):
+            try:
+                recorder.set_workload(**_count_classes(classes_path, _SCENARIO_CLASS_CODES))
+            except Exception:
+                pass
+        name = f"Performance_{clean_name(params['area_name'])}.json"
+        path = recorder.write(os.path.join(work_dir, name))
+        table = recorder.format_table()
+        callback = params.get("log_callback")
+        if callback:
+            callback(table)
+        print(table)
+        return path
+    except Exception:
+        return None
+
+
+def _with_performance_report(func: Callable[..., Dict[str, str]]) -> Callable[..., Dict[str, str]]:
+    """Record timings, memory and environment of a run, strictly passively.
+
+    The recorder is made available to the pipeline body through :mod:`.perf` (module
+    level ``mark`` / ``set_workload``), so that the signature of ``run_pipeline`` is
+    unchanged. A report is written whether the run completes or fails.
+    """
+    signature = inspect.signature(func)
+
+    @functools.wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Dict[str, str]:
+        bound = signature.bind(*args, **kwargs)
+        bound.apply_defaults()
+        params = dict(bound.arguments)
+        reported = {name: params.get(name) for name in _REPORTED_PARAMETERS}
+        reported["weighting_rules_count"] = _json_list_length(params.get("weighting_rules"))
+        reported["custom_sources_count"] = _json_list_length(params.get("custom_sources"))
+        table_csv = params.get("table_csv")
+        reported["classification_table"] = os.path.basename(table_csv) if table_csv else None
+
+        recorder = perf.PerfRecorder(parameters=reported, output_dir=params.get("output_dir"))
+        with perf.activate(recorder):
+            try:
+                result = func(*args, **kwargs)
+            except BaseException:
+                recorder.finish("failed")
+                _write_performance_report(recorder, params)
+                raise
+        recorder.finish("completed")
+        report_path = _write_performance_report(recorder, params, result)
+        if report_path and isinstance(result, dict):
+            result["performance_report"] = report_path
+        return result
+
+    return wrapper
+
+
+@_with_performance_report
 def run_pipeline(
     epci_file: str,
     base_dir: str,
@@ -96,7 +231,9 @@ def run_pipeline(
         log_callback: Function to log messages.
 
     Returns:
-        Dictionary containing paths to key output files.
+        Dictionary containing paths to key output files, including
+        ``performance_report``: the JSON report of timings, memory and environment
+        of the run (see :mod:`.perf`).
     """
     if not os.path.isfile(epci_file):
         raise FileNotFoundError(f"Study area file not found: {epci_file}")
@@ -115,6 +252,7 @@ def run_pipeline(
         print(msg)
 
     def progress(percent: int, msg: str):
+        perf.mark(percent, msg)
         if progress_callback:
             progress_callback(percent, msg)
         log(f"[{percent}%] {msg}")
@@ -169,6 +307,10 @@ def run_pipeline(
 
     log(f"CRS: {crs.authid()}")
     log(f"Extent: {extent_geom.boundingBox().toString()}")
+    try:
+        perf.set_workload(crs=crs.authid(), **_extent_workload(extent_geom, resolution))
+    except Exception:
+        pass
 
     # 1.5 Check required datasets
     # NOTE: only the built-in socle datasets (BD TOPO, OCS GE, RPG) are verified
@@ -199,6 +341,7 @@ def run_pipeline(
     fences_solar_layer = None
     dense_layer = None
     crossings_buffer = None  # Needed for ILT processing
+    failed_sources: Dict[str, str] = {}  # optional sources the run went on without
 
     if skip_vectors:
         log("⏩ Skipping vector processing. Loading existing layers from output directory...")
@@ -278,6 +421,7 @@ def run_pipeline(
             log(f"RPG: {rpg_layer.featureCount()} features")
         except Exception as e:
             rpg_layer = None
+            failed_sources["RPG"] = str(e)
             log(f"⚠️ RPG processing failed or no data: {e}")
 
         # Hydrography
@@ -294,6 +438,7 @@ def run_pipeline(
             log(f"Hydrography: {hydro_layer.featureCount()} features")
         except Exception as e:
             hydro_layer = None
+            failed_sources["HYDRO"] = str(e)
             log(f"⚠️ Hydrography processing failed or no data: {e}")
 
         # Technical Infrastructure
@@ -310,6 +455,7 @@ def run_pipeline(
             log(f"Tech. Infrastructure: {tech_layer.featureCount()} features")
         except Exception as e:
             tech_layer = None
+            failed_sources["TECH_INFRA"] = str(e)
             log(f"⚠️ Technical Infrastructure processing failed or no data: {e}")
 
         # Wildlife Crossings
@@ -327,6 +473,7 @@ def run_pipeline(
                 f"Crossings: {crossings_layer.featureCount()} | Buffers: {crossings_buffer.featureCount()}"
             )
         except Exception as e:
+            failed_sources["CROSSINGS"] = str(e)
             log(f"⚠️ Wildlife Crossings processing failed or no data: {e}")
 
         # ILT (Linear Transport Infrastructure)
@@ -345,6 +492,7 @@ def run_pipeline(
             log(f"ILT: {ilt_layer.featureCount()} features")
         except Exception as e:
             ilt_layer = None
+            failed_sources["LTI"] = str(e)
             log(f"⚠️ ILT processing failed or no data: {e}")
 
         # Fences & Solar
@@ -360,6 +508,7 @@ def run_pipeline(
             log(f"Fences/Solar: {fences_solar_layer.featureCount()} features")
         except Exception as e:
             fences_solar_layer = None
+            failed_sources["SOLAR_FENCES"] = str(e)
             log(f"⚠️ Fences/Solar processing failed or no data: {e}")
 
         # Dense Built-up Areas
@@ -377,7 +526,14 @@ def run_pipeline(
             log(f"Dense Areas: {dense_layer.featureCount()} features")
         except Exception as e:
             dense_layer = None
+            failed_sources["BUILT_AREA"] = str(e)
             log(f"⚠️ Dense Areas processing failed or no data: {e}")
+
+    # A source that fails is skipped so that the run can finish, but the maps then lack
+    # it: record it in the performance report, not only in the log.
+    perf.set_workload(failed_sources=failed_sources)
+    if failed_sources:
+        log(f"⚠️ Run continued WITHOUT: {', '.join(sorted(failed_sources))} (see messages above)")
 
     # 2.5 Custom (user-defined) sources — generic, data-driven loader
     custom_layers = {}
@@ -421,6 +577,16 @@ def run_pipeline(
     # built-in ones via their SOURCE key in the classification table).
     for src_key, src_layer in custom_layers.items():
         vector_sources[src_key] = src_layer
+    try:
+        perf.set_workload(
+            feature_counts={
+                key: int(layer.featureCount())
+                for key, layer in vector_sources.items()
+                if layer is not None
+            }
+        )
+    except Exception:
+        pass
 
     # 4. Load Classification Table
     progress(55, "Loading Classification Table...")
@@ -435,6 +601,7 @@ def run_pipeline(
 
     table_data = load_table_from_csv(table_csv, vector_sources)
     log(f"Loaded {len(table_data)} rules from table.")
+    perf.set_workload(table_rows=len(table_data))
 
     # 5. Rasterization
     progress(60, "Rasterizing Classes & Friction...")

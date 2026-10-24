@@ -27,8 +27,8 @@ repository-code: "https://github.com/a-kumm/FricMaps"
 license: GPL-3.0-or-later
 # Source code is GPL-3.0-or-later; documentation, the default
 # classification table and figures are CC-BY-4.0 (see LICENSE, PART 2).
-version: "1.0.0"
-date-released: "2026-01-01"                              # TODO: update on release
+version: "1.2.0"
+date-released: "2026-10-24"
 keywords:
   - anthropogenic barriers
   - connectivity modelling
