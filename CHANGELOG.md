@@ -4,17 +4,6 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [1.2.1] - 2026-10-24
-
-### Fixed
-- Issues raised by the security scan of the QGIS plugin repository, which
-  blocked 1.2.0. The performance report no longer runs external commands on
-  macOS: memory, CPU model and RAM are read from the system library through
-  `ctypes` (`proc_pidinfo`, `sysctlbyname`) instead of `ps` and `sysctl`, with
-  the same values. Exceptions deliberately ignored while recording performance
-  are logged at debug level instead of being passed silently, and a Windows
-  registry path is no longer taken for an encoded secret.
-
 ## [1.2.0] - 2026-10-24
 
 ### Added
@@ -22,11 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   per-stage timings, memory (RSS), workload descriptors (grid size, valid pixels,
   features per source) and the software and hardware environment. It is also
   returned as the `OUTPUT_PERFORMANCE` output of the Processing algorithm, and is
-  written even when the run fails.
+  written even when the run fails. It runs no external commands, as required by
+  the security scan of the QGIS plugin repository: on macOS, memory, CPU model
+  and RAM are read from the system library through `ctypes` (`proc_pidinfo`,
+  `sysctlbyname`) instead of `ps` and `sysctl`, and exceptions deliberately
+  ignored while recording performance are logged at debug level.
 - `tools/benchmark.py` (repeated headless runs with aggregation: median, spread,
   peak memory, LaTeX table) and `tools/compare_rasters.py` (pixel-wise comparison
   of two sets of outputs); see `docs/BENCHMARKING.md`.
 - Unit tests under `tests/` (`python -m unittest discover -s tests`).
+
+### Changed
+- `qgisMaximumVersion` raised to 4.99 so that the plugin can be installed on
+  QGIS 4. Compatibility with Qt 6 is not yet complete.
 
 ### Fixed
 - Results no longer depend on the operating system when the BD TOPO departments
